@@ -1,0 +1,1 @@
+require "tools-cf-plugin/watch"

@@ -32,10 +32,14 @@ module CFTools
       @request_ticker = 0
 
       watching_nats("nats://#{user}:#{pass}@#{host}:#{port}") do |msg, reply, sub|
-        if @requests.include?(sub)
-          process_response(sub, reply, msg, app)
-        elsif msg.include?(app.guid)
-          process_message(sub, reply, msg, app)
+        begin
+          if @requests.include?(sub)
+            process_response(sub, reply, msg, app)
+          elsif msg.include?(app.guid)
+            process_message(sub, reply, msg, app)
+          end
+        rescue => e
+          line c("couldn't deal w/ #{sub} '#{msg}': #{e.class}: #{e}", :error)
         end
       end
     end

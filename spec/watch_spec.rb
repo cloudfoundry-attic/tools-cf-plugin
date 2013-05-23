@@ -59,6 +59,23 @@ describe CFTools::Watch do
       watch
     end
 
+    context "when a malformed message comes in" do
+      it "prints an error message and keeps on truckin'" do
+        stub(NATS).subscribe(">") do |_, block|
+          block.call("foo-#{app.guid}", nil, "some.subject")
+        end
+
+        any_instance_of described_class do |cli|
+          stub(cli).process_message { raise "hell" }
+        end
+
+        watch
+
+        expect(output).to say(
+          "couldn't deal w/ some.subject 'foo-#{app.guid}': RuntimeError: hell")
+      end
+    end
+
     context "when a message comes in with a reply channel, followed by a reply" do
       it "registers it in #requests" do
         stub(NATS).subscribe(">") do |_, block|

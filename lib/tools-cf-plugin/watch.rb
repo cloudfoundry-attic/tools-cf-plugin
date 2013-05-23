@@ -86,6 +86,8 @@ module CFTools
         sub, msg = pretty_find_droplet(sub, msg)
       when "healthmanager.status"
         sub, msg = pretty_healthmanager_status(sub, msg)
+      when "dea.shutdown"
+        sub, msg = pretty_dea_shutdown(sub, msg)
       end
 
       if reply
@@ -119,6 +121,8 @@ module CFTools
     def pretty_heartbeat(sub, msg, app)
       payload = JSON.parse(msg)
 
+      dea, _ = payload["dea"].split("-", 2)
+
       states = Hash.new(0)
       payload["droplets"].each do |droplet|
         next unless droplet["droplet"] == app.guid
@@ -126,7 +130,7 @@ module CFTools
       end
 
       [ d(sub),
-        "dea: #{payload["dea"].to_i}, " + states.collect { |state, count|
+        "dea: #{dea}, " + states.collect { |state, count|
           "#{c(state.downcase, state_color(state))}: #{count}"
         }.join(", ")
       ]
@@ -182,12 +186,12 @@ module CFTools
 
     def pretty_find_droplet_response(sub, msg)
       payload = JSON.parse(msg)
-      dea = payload["dea"]
+      dea, _ = payload["dea"].split("-", 2)
       index = payload["index"]
       state = payload["state"]
       time = Time.at(payload["state_timestamp"])
       [ sub,
-        "dea: #{dea.to_i}, index: #{index}, state: #{c(state.downcase, state_color(state))}, since: #{time}"
+        "dea: #{dea}, index: #{index}, state: #{c(state.downcase, state_color(state))}, since: #{time}"
       ]
     end
 
@@ -204,6 +208,19 @@ module CFTools
 
     def pretty_updated(sub)
       [d(sub), ""]
+    end
+
+    def pretty_dea_shutdown(sub, msg)
+      payload = JSON.parse(msg)
+
+      dea, _ = payload["id"].split("-", 2)
+
+      apps = payload["app_id_to_count"].collect do |guid, count|
+        app = client.app(guid)
+        "#{count} x #{app.name} (#{guid})"
+      end
+
+      [c(sub, :error), "dea: #{dea}, apps: #{list(apps)}"]
     end
 
     def watching_nats(uri, &blk)

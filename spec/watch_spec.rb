@@ -503,6 +503,34 @@ PAYLOAD
           end
         end
       end
+
+      context "and the subject is dea.shutdown" do
+        let(:payload) { <<PAYLOAD }
+{
+  "app_id_to_count": {
+    "#{app.guid}": 1,
+    "#{other_app.guid}": 2
+  },
+  "version": "0.0.1",
+  "ip": "1.2.3.4",
+  "id": "0-deadbeef"
+}
+PAYLOAD
+
+        let(:other_app) { fake :app, :name => "otherapp" }
+        let(:client) { fake_client :apps => [app, other_app] }
+
+        it "prints the DEA and affected applications" do
+          stub(NATS).subscribe(">") do |_, block|
+            block.call(payload, nil, "dea.shutdown")
+          end
+
+          watch
+
+          expect(output).to say(
+            "dea: 0, apps: 1 x myapp (#{app.guid}), 2 x otherapp (#{other_app.guid})")
+        end
+      end
     end
 
     context "when a message NOT containing the app's GUID is seen" do

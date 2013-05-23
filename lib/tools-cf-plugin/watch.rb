@@ -31,6 +31,8 @@ module CFTools
       @requests = {}
       @request_ticker = 0
 
+      $stdout.sync = true
+
       watching_nats("nats://#{user}:#{pass}@#{host}:#{port}") do |msg, reply, sub|
         begin
           if @requests.include?(sub)

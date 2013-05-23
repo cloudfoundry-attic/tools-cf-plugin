@@ -59,6 +59,14 @@ describe CFTools::Watch do
       watch
     end
 
+    it "turns off output buffering" do
+      any_instance_of(StringIO) do |io|
+        mock(io).sync = true
+      end
+
+      watch
+    end
+
     context "when a malformed message comes in" do
       it "prints an error message and keeps on truckin'" do
         stub(NATS).subscribe(">") do |_, block|

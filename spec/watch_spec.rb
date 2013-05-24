@@ -92,8 +92,8 @@ describe CFTools::Watch do
 
       cf %W[watch]
 
-      expect(output).to say("some.subject             (1)\tfoo")
-      expect(output).to say("`- reply to some.subject (1)\tsome-response")
+      expect(output).to say(/some\.subject             \(1\)\s*foo/)
+      expect(output).to say(/`- reply to some\.subject \(1\)\s+some-response/)
     end
   end
 
@@ -466,14 +466,14 @@ PAYLOAD
 
 PAYLOAD
 
-    it "prints a blank message" do
+    it "prints the app that was updated" do
       stub(NATS).subscribe(">") do |_, block|
         block.call(payload, nil, "droplet.updated")
       end
 
       cf %W[watch]
 
-      expect(output).to say("droplet.updated\tapp: myapp")
+      expect(output).to say("app: myapp")
       expect(output).to_not say("cc_partition")
     end
   end
@@ -802,7 +802,7 @@ PAYLOAD
 
         cf %W[watch]
 
-        expect(output).to say("\thm.request\t")
+        expect(output).to say(/\s+hm\.request\s+/)
       end
 
       it "prints the operation, last updated timestamp, and instances" do

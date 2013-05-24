@@ -30,6 +30,7 @@ module CFTools
       pass = input[:password]
 
       @requests = {}
+      @seen_apps = {}
       @request_ticker = 0
 
       $stdout.sync = true
@@ -264,8 +265,8 @@ module CFTools
 
     def pretty_healthmanager_health(sub, msg)
       payload = JSON.parse(msg)
-      apps = payload["droplets"].collect { |d| client.app(d["droplet"]) }
-      [d(sub), "querying health for: #{name_list(apps)}"]
+      apps = payload["droplets"].collect { |d| pretty_app(d["droplet"]) }
+      [d(sub), "querying health for: #{list(apps)}"]
     end
 
     def pretty_healthmanager_health_response(sub, msg)
@@ -284,13 +285,7 @@ module CFTools
       dea, _ = payload["id"].split("-", 2)
 
       apps = payload["app_id_to_count"].collect do |guid, count|
-        app = client.app(guid)
-
-        if app.exists?
-          "#{count} x #{app.name} (#{guid})"
-        else
-          "#{count} x unknown (#{guid})"
-        end
+        "#{count} x #{pretty_app(guid)}"
       end
 
       [c(sub, :error), "dea: #{dea}, apps: #{list(apps)}"]
@@ -338,12 +333,13 @@ module CFTools
     end
 
     def pretty_app(guid)
-      app = client.app(guid)
+      app = @seen_apps[guid] || client.app(guid)
 
-      if app.exists?
+      if @seen_apps.key?(guid) || app.exists?
+        @seen_apps[guid] = app
         c(app.name, :name)
       else
-        d("unknown")
+        d("unknown (#{guid})")
       end
     end
 

@@ -308,16 +308,16 @@ PAYLOAD
     context "when there's an associated DEA" do
       let(:payload) { <<PAYLOAD }
 {
-"private_instance_id": "e4a5ee2330c81fd7611eba7dbedbb499a00ae1b79f97f40a3603c8bff6fbcc6f",
-"tags": {},
-"port": 61111,
-"host": "192.0.43.10",
-"uris": [
-  "my-app.com",
-  "my-app-2.com"
-],
-"app": "#{app.guid}",
-"dea": "1-4b293b726167fbc895af5a7927c0973a"
+  "private_instance_id": "e4a5ee2330c81fd7611eba7dbedbb499a00ae1b79f97f40a3603c8bff6fbcc6f",
+  "tags": {},
+  "port": 61111,
+  "host": "192.0.43.10",
+  "uris": [
+    "my-app.com",
+    "my-app-2.com"
+  ],
+  "app": "#{app.guid}",
+  "dea": "1-4b293b726167fbc895af5a7927c0973a"
 }
 PAYLOAD
 
@@ -755,8 +755,7 @@ PAYLOAD
 
         cf %W[watch]
 
-        expect(output).to say(
-          "dea: 0, apps: 1 x myapp (#{app.guid}), 2 x otherapp (#{other_app.guid})")
+        expect(output).to say("dea: 0, apps: 1 x myapp, 2 x otherapp")
       end
     end
 
@@ -774,7 +773,7 @@ PAYLOAD
         cf %W[watch]
 
         expect(output).to say(
-          "dea: 0, apps: 1 x myapp (#{app.guid}), 2 x unknown (#{other_app.guid})")
+          "dea: 0, apps: 1 x myapp, 2 x unknown (#{other_app.guid})")
       end
     end
   end

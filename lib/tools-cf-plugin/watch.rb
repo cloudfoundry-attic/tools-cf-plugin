@@ -8,10 +8,11 @@ module CFTools
     end
 
     REPLY_PREFIX = "`- reply to "
+    COLUMN_WIDTH = 30
 
     desc "Watch messages going over NATS relevant to an application"
     group :admin
-    input :app, :argument => :required, :from_given => by_name(:app),
+    input :app, :argument => :optional, :from_given => by_name(:app),
           :desc => "Application to watch"
     input :host, :alias => "-h", :default => "localhost",
           :desc => "NATS server address"
@@ -37,7 +38,7 @@ module CFTools
         begin
           if @requests.include?(sub)
             process_response(sub, reply, msg, app)
-          elsif msg.include?(app.guid)
+          elsif !app || msg.include?(app.guid)
             process_message(sub, reply, msg, app)
           end
         rescue => e
@@ -65,11 +66,17 @@ module CFTools
 
       case sub
       when "dea.advertise"
-        return
+        return if app
+        sub, msg = pretty_dea_advertise(sub, msg)
+      when "staging.advertise"
+        return if app
+        sub, msg = pretty_staging_advertise(sub, msg)
       when "droplet.exited"
         sub, msg = pretty_exited(sub, msg)
       when "dea.heartbeat"
         sub, msg = pretty_heartbeat(sub, msg, app)
+      when "router.start"
+        sub, msg = pretty_router_start(sub, msg)
       when "router.register"
         sub, msg = pretty_register(sub, msg)
       when "router.unregister"
@@ -79,15 +86,21 @@ module CFTools
       when "dea.stop"
         sub, msg = pretty_stop(sub, msg)
       when "droplet.updated"
-        sub, msg = pretty_updated(sub)
+        sub, msg = pretty_updated(sub, msg)
       when "dea.update"
         sub, msg = pretty_dea_update(sub, msg)
       when "dea.find.droplet"
         sub, msg = pretty_find_droplet(sub, msg)
       when "healthmanager.status"
         sub, msg = pretty_healthmanager_status(sub, msg)
+      when "healthmanager.health"
+        sub, msg = pretty_healthmanager_health(sub, msg)
       when "dea.shutdown"
         sub, msg = pretty_dea_shutdown(sub, msg)
+      when /^cloudcontrollers\.hm\.requests\.\w+$/
+        sub, msg = process_cloudcontrollers_hm_request(sub, msg)
+      when /([^\.]+)\.announce$/
+        sub, msg = process_service_announcement(sub, msg)
       end
 
       if reply
@@ -95,6 +108,7 @@ module CFTools
         sub += " (#{c(@request_ticker, :error)})"
       end
 
+      sub = sub.ljust(COLUMN_WIDTH)
       line "#{timestamp}\t#{sub}\t#{msg}"
     end
 
@@ -106,15 +120,37 @@ module CFTools
         sub, msg = pretty_find_droplet_response(sub, msg)
       when "healthmanager.status"
         sub, msg = pretty_healthmanager_status_response(sub, msg)
+      when "healthmanager.health"
+        sub, msg = pretty_healthmanager_health_response(sub, msg)
       end
 
       line "#{timestamp}\t#{REPLY_PREFIX}#{sub} (#{c(id, :error)})\t#{msg}"
     end
 
+    def pretty_dea_advertise(sub, msg)
+      payload = JSON.parse(msg)
+      dea, _ = payload["id"].split("-", 2)
+      [ d(sub),
+        "dea: #{dea}, stacks: #{list(payload["stacks"])}, available mem: #{human_mb(payload["available_memory"])}, apps: #{pretty_app_count(payload["app_id_to_count"])}"
+      ]
+    end
+
+    def pretty_staging_advertise(sub, msg)
+      payload = JSON.parse(msg)
+      dea, _ = payload["id"].split("-", 2)
+      [ d(sub),
+        "dea: #{dea}, stacks: #{list(payload["stacks"])}, available mem: #{human_mb(payload["available_memory"])}"
+      ]
+    end
+
+    def pretty_app_count(counts)
+      list(counts.collect { |g, c| "#{c} x #{pretty_app(g)}" })
+    end
+
     def pretty_exited(sub, msg)
       payload = JSON.parse(msg)
       [ c(sub, :bad),
-        "reason: #{payload["reason"]}, index: #{payload["index"]}"
+        "app: #{pretty_app(payload["droplet"])}, reason: #{payload["reason"]}, index: #{payload["index"]}"
       ]
     end
 
@@ -125,7 +161,7 @@ module CFTools
 
       states = Hash.new(0)
       payload["droplets"].each do |droplet|
-        next unless droplet["droplet"] == app.guid
+        next unless !app || droplet["droplet"] == app.guid
         states[droplet["state"]] += 1
       end
 
@@ -136,52 +172,72 @@ module CFTools
       ]
     end
 
+    def pretty_router_start(sub, msg)
+      payload = JSON.parse(msg)
+      [c(sub, :neutral), "hosts: #{list(payload["hosts"])}"]
+    end
+
     def pretty_register(sub, msg)
       payload = JSON.parse(msg)
-      dea, _ = payload["dea"].split("-", 2)
-      [ c(sub, :neutral),
-        "dea: #{dea}, uris: #{list(payload["uris"])}, host: #{payload["host"]}, port: #{payload["port"]}"
-      ]
+
+      if (dea_id = payload["dea"])
+        dea, _ = dea_id.split("-", 2)
+        message = "app: #{pretty_app(payload["app"])}, dea: #{dea}, "
+      else
+        message = ""
+      end
+
+      message << "uris: #{list(payload["uris"])}, host: #{payload["host"]}, port: #{payload["port"]}"
+
+      [c(sub, :neutral), message]
     end
 
     def pretty_unregister(sub, msg)
       payload = JSON.parse(msg)
-      dea, _ = payload["dea"].split("-", 2)
-      [ c(sub, :warning),
-        "dea: #{dea}, uris: #{list(payload["uris"])}, host: #{payload["host"]}, port: #{payload["port"]}"
-      ]
+
+      if (dea_id = payload["dea"])
+        dea, _ = dea_id.split("-", 2)
+        message = "app: #{pretty_app(payload["app"])}, dea: #{dea}, "
+      else
+        message = ""
+      end
+
+      message << "uris: #{list(payload["uris"])}, host: #{payload["host"]}, port: #{payload["port"]}"
+
+      [c(sub, :warning), message]
     end
 
     def pretty_start(sub, msg, dea)
       payload = JSON.parse(msg)
       [ c("dea.#{dea}.start", :good),
-        "dea: #{dea}, index: #{payload["index"]}, uris: #{list(payload["uris"])}"
+        "app: #{pretty_app(payload["droplet"])}, dea: #{dea}, index: #{payload["index"]}, uris: #{list(payload["uris"])}"
       ]
     end
 
     def pretty_stop(sub, msg)
       payload = JSON.parse(msg)
 
+      message = "app: #{pretty_app(payload["droplet"])}, "
       if (indices = payload["indices"])
-        msg = "scaling down indices: #{indices.join(", ")}"
+        message << "scaling down indices: #{indices.join(", ")}"
       elsif (instances = payload["instances"])
-        msg = "killing extra instances: #{instances.join(", ")}"
+        message << "killing extra instances: #{instances.join(", ")}"
       else
-        msg = "stopping application"
+        message << "stopping application"
       end
 
-      [c(sub, :warning), msg]
+      [c(sub, :warning), message]
     end
 
     def pretty_dea_update(sub, msg)
       payload = JSON.parse(msg)
-      [d(sub), "uris: #{payload["uris"].join(", ")}"]
+      [d(sub), "app: #{pretty_app(payload["droplet"])}, uris: #{payload["uris"].join(", ")}"]
     end
 
     def pretty_find_droplet(sub, msg)
       payload = JSON.parse(msg)
       states = payload["states"].collect { |s| c(s.downcase, state_color(s))}
-      [d(sub), "querying states: #{states.join(", ")}"]
+      [d(sub), "app: #{pretty_app(payload["droplet"])}, querying states: #{states.join(", ")}"]
     end
 
     def pretty_find_droplet_response(sub, msg)
@@ -198,7 +254,7 @@ module CFTools
     def pretty_healthmanager_status(sub, msg)
       payload = JSON.parse(msg)
       state = payload["state"]
-      [d(sub), "querying states: #{c(state.downcase, state_color(state))}"]
+      [d(sub), "app: #{pretty_app(payload["droplet"])}, querying states: #{c(state.downcase, state_color(state))}"]
     end
 
     def pretty_healthmanager_status_response(sub, msg)
@@ -206,8 +262,20 @@ module CFTools
       [sub, "indices: #{list(payload["indices"])}"]
     end
 
-    def pretty_updated(sub)
-      [d(sub), ""]
+    def pretty_healthmanager_health(sub, msg)
+      payload = JSON.parse(msg)
+      apps = payload["droplets"].collect { |d| client.app(d["droplet"]) }
+      [d(sub), "querying health for: #{name_list(apps)}"]
+    end
+
+    def pretty_healthmanager_health_response(sub, msg)
+      payload = JSON.parse(msg)
+      [sub, "app: #{pretty_app(payload["droplet"])}, healthy: #{payload["healthy"]}"]
+    end
+
+    def pretty_updated(sub, msg)
+      payload = JSON.parse(msg)
+      [d(sub), "app: #{pretty_app(payload["droplet"])}"]
     end
 
     def pretty_dea_shutdown(sub, msg)
@@ -217,10 +285,66 @@ module CFTools
 
       apps = payload["app_id_to_count"].collect do |guid, count|
         app = client.app(guid)
-        "#{count} x #{app.name} (#{guid})"
+
+        if app.exists?
+          "#{count} x #{app.name} (#{guid})"
+        else
+          "#{count} x unknown (#{guid})"
+        end
       end
 
       [c(sub, :error), "dea: #{dea}, apps: #{list(apps)}"]
+    end
+
+    def process_cloudcontrollers_hm_request(sub, msg)
+      payload = JSON.parse(msg)
+      last_updated = Time.at(payload["last_updated"])
+
+      op = payload["op"]
+
+      message = "app: #{pretty_app(payload["droplet"])}, operation: #{pretty_hm_op(op)}, app last updated: #{last_updated}, "
+
+      case op
+      when "STOP"
+        message << "instances: #{list(payload["instances"])}"
+      when "START"
+        message << "indices: #{list(payload["indices"])}"
+      end
+
+      [c("hm.request", :warning), message]
+    end
+
+    def process_service_announcement(sub, msg)
+      payload = JSON.parse(msg)
+      id = payload["id"]
+      plan = payload["plan"]
+      c_unit = payload["capacity_unit"]
+      c_max = payload["max_capacity"]
+      c_avail = payload["available_capacity"]
+      s_versions = payload["supported_versions"]
+
+      [d(sub), "id: #{id}, plan: #{plan}, supported versions: #{list(s_versions)}, capacity: (available: #{c_avail}, max: #{c_max}, unit: #{c_unit})"]
+    end
+
+    def pretty_hm_op(op)
+      case op
+      when "STOP"
+        c("stop", :bad)
+      when "START"
+        c("start", :good)
+      else
+        op
+      end
+    end
+
+    def pretty_app(guid)
+      app = client.app(guid)
+
+      if app.exists?
+        c(app.name, :name)
+      else
+        d("unknown")
+      end
     end
 
     def watching_nats(uri, &blk)

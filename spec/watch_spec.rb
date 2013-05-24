@@ -841,6 +841,32 @@ PAYLOAD
       end
     end
 
+    context "when a message is seen with subject vcap.component.announce" do
+      let(:payload) { <<PAYLOAD }
+{
+  "start": "2013-05-24 16:45:01 +0000",
+  "credentials": [
+    "cb68328a26f68416eabbad702c542000",
+    "0e6b5ec19df10c7ba2e7f36cdf33474e"
+  ],
+  "host": "10.10.32.10:39195",
+  "uuid": "some-uuid",
+  "index": 0,
+  "type": "QaaS-Provisioner"
+}
+PAYLOAD
+
+      it "prints the type, index, host, start time" do
+        stub(NATS).subscribe(">") do |_, block|
+          block.call(payload, nil, "vcap.component.announce")
+        end
+
+        cf %W[watch]
+
+        expect(output).to say("type: QaaS-Provisioner, index: 0, uuid: some-uuid, start time: 2013-05-24 16:45:01 +0000")
+      end
+    end
+
     context "and it is a START operation" do
       let(:payload) { <<PAYLOAD }
 {

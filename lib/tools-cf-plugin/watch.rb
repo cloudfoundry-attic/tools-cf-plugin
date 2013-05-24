@@ -100,8 +100,10 @@ module CFTools
         sub, msg = pretty_dea_shutdown(sub, msg)
       when /^cloudcontrollers\.hm\.requests\.\w+$/
         sub, msg = process_cloudcontrollers_hm_request(sub, msg)
-      when /([^\.]+)\.announce$/
-        sub, msg = process_service_announcement(sub, msg)
+      when /^([^.]+)\.announce$/
+        sub, msg = pretty_service_announcement(sub, msg)
+      when "vcap.component.announce"
+        sub, msg = pretty_component_announcement(sub, msg)
       end
 
       if reply
@@ -309,7 +311,7 @@ module CFTools
       [c("hm.request", :warning), message]
     end
 
-    def process_service_announcement(sub, msg)
+    def pretty_service_announcement(sub, msg)
       payload = JSON.parse(msg)
       id = payload["id"]
       plan = payload["plan"]
@@ -319,6 +321,16 @@ module CFTools
       s_versions = payload["supported_versions"]
 
       [d(sub), "id: #{id}, plan: #{plan}, supported versions: #{list(s_versions)}, capacity: (available: #{c_avail}, max: #{c_max}, unit: #{c_unit})"]
+    end
+
+    def pretty_component_announcement(sub, msg)
+      payload = JSON.parse(msg)
+      type = payload["type"]
+      index = payload["index"]
+      uuid = payload["uuid"]
+      time = payload["start"]
+
+      [d(sub), "type: #{type}, index: #{index}, uuid: #{uuid}, start time: #{time}"]
     end
 
     def pretty_hm_op(op)

@@ -49,9 +49,9 @@ describe CFTools::Watch do
   end
 
   context "when no NATS server info is specified" do
-    it "connects on nats:nats@localhost:4222" do
+    it "connects on nats:nats@127.0.0.1:4222" do
       mock(NATS).start(hash_including(
-        :uri => "nats://nats:nats@localhost:4222"))
+        :uri => "nats://nats:nats@127.0.0.1:4222"))
 
       cf %W[watch]
     end

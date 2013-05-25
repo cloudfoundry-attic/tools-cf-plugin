@@ -14,7 +14,7 @@ module CFTools
     group :admin
     input :app, :argument => :optional, :from_given => by_name(:app),
           :desc => "Application to watch"
-    input :host, :alias => "-h", :default => "localhost",
+    input :host, :alias => "-h", :default => "127.0.0.1",
           :desc => "NATS server address"
     input :port, :alias => "-P", :default => 4222, :type => :integer,
           :desc => "NATS server port"

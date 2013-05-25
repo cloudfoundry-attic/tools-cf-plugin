@@ -366,12 +366,19 @@ module CFTools
     end
 
     def pretty_app(guid)
-      app = @seen_apps[guid] || client.app(guid)
+      existing_app =
+        if @seen_apps.key?(guid)
+          @seen_apps[guid]
+        else
+          app = client.app(guid)
+          app if app.exists?
+        end
 
-      if @seen_apps.key?(guid) || app.exists?
-        @seen_apps[guid] = app
-        c(app.name, :name)
+      if existing_app
+        @seen_apps[guid] = existing_app
+        c(existing_app.name, :name)
       else
+        @seen_apps[guid] = nil
         d("unknown (#{guid})")
       end
     end

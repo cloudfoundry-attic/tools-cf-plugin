@@ -104,6 +104,8 @@ module CFTools
         sub, msg = pretty_service_announcement(sub, msg)
       when "vcap.component.announce"
         sub, msg = pretty_component_announcement(sub, msg)
+      when "vcap.component.discover"
+        sub, msg = pretty_component_discover(sub, msg)
       end
 
       if reply
@@ -125,6 +127,8 @@ module CFTools
         sub, msg = pretty_healthmanager_status_response(sub, msg)
       when "healthmanager.health"
         sub, msg = pretty_healthmanager_health_response(sub, msg)
+      when "vcap.component.discover"
+        sub, msg = pretty_component_discover_response(sub, msg)
       end
 
       line "#{timestamp}\t#{REPLY_PREFIX}#{sub} (#{c(id, :error)})\t#{msg}"
@@ -331,6 +335,23 @@ module CFTools
       time = payload["start"]
 
       [d(sub), "type: #{type}, index: #{index}, uuid: #{uuid}, start time: #{time}"]
+    end
+
+    def pretty_component_discover(sub, msg)
+      [d(sub), msg]
+    end
+
+    def pretty_component_discover_response(sub, msg)
+      payload = JSON.parse(msg)
+      type = payload["type"]
+      index = payload["index"]
+      host = payload["host"]
+      uptime = payload["uptime"]
+
+      message = "type: #{type}, index: #{index}, host: #{host}"
+      message << ", uptime: #{uptime}" if uptime
+
+      [d(sub), message]
     end
 
     def pretty_hm_op(op)

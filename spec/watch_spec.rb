@@ -893,4 +893,73 @@ PAYLOAD
       end
     end
   end
+
+  context "when a message is seen with subject vcap.component.discover" do
+    let(:payload) { "" }
+
+    let(:response_payload) { <<PAYLOAD }
+{
+  "uptime": "0d:23h:51m:21s",
+  "start": "2013-05-24 17:58:08 +0000",
+  "credentials": [
+    "d34f205a31232eef040d1e39ebdd631a",
+    "701e1a68a811a1ac8c137a70db08c1a8"
+  ],
+  "host": "1.2.3.4:8080",
+  "uuid": "4-deadbeef",
+  "index": 4,
+  "type": "DEA"
+}
+PAYLOAD
+
+    it "prints the states being queried" do
+      stub(NATS).subscribe(">") do |_, block|
+        block.call(payload, nil, "vcap.component.discover")
+      end
+
+      cf %W[watch]
+
+      expect(output).to say("vcap.component.discover")
+    end
+
+    context "and we see the response" do
+      it "pretty-prints the response" do
+        stub(NATS).subscribe(">") do |_, block|
+          block.call(payload, "some-inbox", "vcap.component.discover")
+          block.call(response_payload, nil, "some-inbox")
+        end
+
+        cf %W[watch]
+
+        expect(output).to say("reply to vcap.component.discover (1)\ttype: DEA, index: 4, host: 1.2.3.4:8080, uptime: 0d:23h:51m:21s")
+      end
+
+      context "and there's no uptime" do
+        let(:response_payload) { <<PAYLOAD }
+{
+  "start": "2013-05-24 17:58:08 +0000",
+  "credentials": [
+    "d34f205a31232eef040d1e39ebdd631a",
+    "701e1a68a811a1ac8c137a70db08c1a8"
+  ],
+  "host": "1.2.3.4:8080",
+  "uuid": "1-deadbeef",
+  "index": 1,
+  "type": "login"
+}
+PAYLOAD
+
+        it "does not include it in the message" do
+          stub(NATS).subscribe(">") do |_, block|
+            block.call(payload, "some-inbox", "vcap.component.discover")
+            block.call(response_payload, nil, "some-inbox")
+          end
+
+          cf %W[watch]
+
+          expect(output).to say("reply to vcap.component.discover (1)\ttype: login, index: 1, host: 1.2.3.4:8080")
+        end
+      end
+    end
+  end
 end

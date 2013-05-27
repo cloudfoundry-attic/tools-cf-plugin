@@ -1,10 +1,6 @@
 require "spec_helper"
 
 describe CFTools::Watch do
-  let(:fake_home_dir) { "#{SPEC_ROOT}/fixtures/fake_home_dir" }
-
-  stub_home_dir_with { fake_home_dir }
-
   let(:app) { fake :app, :name => "myapp", :guid => "myappguid" }
 
   let(:client) { fake_client :apps => [app] }

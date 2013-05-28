@@ -28,7 +28,7 @@ GIT
 PATH
   remote: .
   specs:
-    tools-cf-plugin (1.0.0)
+    tools-cf-plugin (1.1.0)
       bosh_cli (>= 1.5.0.pre.3, < 1.6)
       cfoundry
       nats

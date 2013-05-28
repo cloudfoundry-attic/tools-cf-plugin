@@ -72,9 +72,9 @@ module CFTools::Tunnel
     context "when there are jobs to log" do
       it "streams their locations" do
         mock(stream).stream(anything) do |locations, blk|
-          expect(locations).to include("1.2.3.4")
-          expect(locations).to include("1.2.3.5")
-          expect(locations).to include("1.2.3.6")
+          expect(locations).to include(["cloud_controller", 0])
+          expect(locations).to include(["dea_next", 0])
+          expect(locations).to include(["dea_next", 1])
         end
 
         cf %W[watch-logs some-director.com]

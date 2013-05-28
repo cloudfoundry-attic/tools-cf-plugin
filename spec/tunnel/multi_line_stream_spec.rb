@@ -2,15 +2,20 @@ require "spec_helper"
 
 module CFTools::Tunnel
   describe MultiLineStream do
+    let(:director) { stub }
+    let(:deployment) { "some-deployment" }
     let(:gateway_user) { "vcap" }
     let(:gateway_host) { "vcap.me" }
 
     let(:gateway) { stub }
     let(:entries) { Queue.new }
 
-    subject { described_class.new(gateway_user, gateway_host) }
+    subject do
+      described_class.new(director, deployment, gateway_user, gateway_host)
+    end
 
     before do
+      stub(subject).create_ssh_user { ["1.2.3.4", "some_user_1"] }
       stub(subject).gateway { gateway }
       stub(subject).entry_queue { entries }
       stub(Thread).new { |blk| blk.call }
@@ -34,12 +39,15 @@ module CFTools::Tunnel
         mock(Thread).new { |blk| blk.call }.ordered
         mock(Thread).new { |blk| blk.call }.ordered
 
-        mock(gateway).ssh("1.2.3.4", gateway_user)
-        mock(gateway).ssh("1.2.3.5", gateway_user)
+        mock(subject).create_ssh_user("foo", 0, entries) { ["1.2.3.4", "some_user_1"] }
+        mock(subject).create_ssh_user("bar", 0, entries) { ["1.2.3.5", "some_user_2"] }
+
+        mock(gateway).ssh("1.2.3.4", "some_user_1")
+        mock(gateway).ssh("1.2.3.5", "some_user_2")
 
         entries << nil
 
-        subject.stream("1.2.3.4" => [], "1.2.3.5" => [])
+        subject.stream(["foo", 0] => [], ["bar", 0]=> [])
       end
 
       it "streams from each location" do

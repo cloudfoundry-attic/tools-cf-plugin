@@ -25,8 +25,6 @@ module CFTools::Tunnel
 
       director = connected_director(director_host, gateway)
 
-      stream = stream_for(gateway)
-
       deployment =
         with_progress("Getting deployment info") do
           current_deployment(director)
@@ -43,6 +41,8 @@ module CFTools::Tunnel
           end
         end
 
+      stream = stream_for(director, deployment["name"], gateway)
+
       stream.stream(locations) do |entry|
         line pretty_print_entry(entry)
       end
@@ -50,9 +50,9 @@ module CFTools::Tunnel
 
     private
 
-    def stream_for(gateway)
+    def stream_for(director, deployment, gateway)
       user, host = gateway.split("@", 2)
-      MultiLineStream.new(user, host)
+      MultiLineStream.new(director, deployment, user, host)
     end
 
     def max_label_size
@@ -79,7 +79,7 @@ module CFTools::Tunnel
 
         vm["ips"].each do |ip|
           LOGS[name].each do |file|
-            locations[ip] << StreamLocation.new(file, "#{name}/#{index}")
+            locations[[name, index]] << StreamLocation.new(file, "#{name}/#{index}")
           end
         end
       end

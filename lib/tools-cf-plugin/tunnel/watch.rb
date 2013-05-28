@@ -10,11 +10,13 @@ module CFTools::Tunnel
   class Watch < Base
     desc "Watch, by grabbing the connection info from your BOSH deployment."
     input :director, :argument => :required, :desc => "BOSH director address"
-    input :gateway, :argument => :optional, 
-          :default => proc { "vcap@#{input[:director]}" },
+    input :app, :argument => :optional, :from_given => by_name(:app),
+          :desc => "Application to watch"
+    input :gateway, :default => proc { "vcap@#{input[:director]}" },
           :desc => "SSH connection string (default: vcap@director)"
     def tunnel_watch
       director_host = input[:director]
+      app = input[:app]
       gateway = input[:gateway]
 
       director = connected_director(director_host, gateway)
@@ -35,7 +37,7 @@ module CFTools::Tunnel
         login_as_admin(manifest)
       end
 
-      invoke :watch, :port => nport,
+      invoke :watch, :app => app, :port => nport,
              :user => nats["user"], :password => nats["password"]
     end
 

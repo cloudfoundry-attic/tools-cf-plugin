@@ -18,8 +18,6 @@ module CFTools
       def stream(locations)
         entries = entry_queue
 
-        Thread.abort_on_exception = true
-
         locations.each do |(name, index), locs|
           Thread.new do
             stream_location(name, index, locs, entries)

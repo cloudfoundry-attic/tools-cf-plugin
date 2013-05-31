@@ -44,6 +44,9 @@ module CFTools::Tunnel
           tunnel_to(nats["address"], nats["port"], gateway) 
         end
 
+      line "port: #{nport}"
+      line "creds: #{nats}"
+
       with_progress("Logging in as admin user") do
         login_as_admin(manifest)
       end

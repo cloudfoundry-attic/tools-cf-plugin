@@ -79,6 +79,7 @@ module CFTools
       when "router.start"
         sub, msg = pretty_router_start(sub, msg)
       when "router.register"
+        return unless app
         sub, msg = pretty_register(sub, msg)
       when "router.unregister"
         sub, msg = pretty_unregister(sub, msg)
@@ -440,7 +441,7 @@ module CFTools
         end
 
       if existing_app
-        @seen_apps[guid] = existing_app
+        #@seen_apps[guid] = existing_app
         c(existing_app.name, :name)
       else
         @seen_apps[guid] = nil

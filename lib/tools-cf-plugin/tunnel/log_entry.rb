@@ -26,6 +26,12 @@ module CFTools
       rescue JSON::ParserError
       end
 
+      def data
+        json = JSON.parse(@line)
+        json["data"]
+      rescue JSON::ParserError
+      end
+
       def timestamp
         json = JSON.parse(@line)
 

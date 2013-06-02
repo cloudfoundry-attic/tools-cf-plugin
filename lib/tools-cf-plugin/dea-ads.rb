@@ -5,7 +5,7 @@ module CFTools
   class DEAAds < CF::App::Base
     def precondition; end
 
-    desc "Visualize a message that comes over NATS."
+    desc "Show an overview of DEA advertisements over time."
     group :admin
     input :host, :alias => "-h", :default => "127.0.0.1",
           :desc => "NATS server address"

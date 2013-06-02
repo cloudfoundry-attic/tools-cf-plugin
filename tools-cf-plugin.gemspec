@@ -18,6 +18,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "nats"
   s.add_runtime_dependency "bosh_cli", ">= 1.5.0.pre.3", "< 1.6"
   s.add_runtime_dependency "net-ssh"
+  s.add_runtime_dependency "pry"
 
   s.add_development_dependency "rake", ">= 0.9"
   s.add_development_dependency "rspec", "~> 2.11"

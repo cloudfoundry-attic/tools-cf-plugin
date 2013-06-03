@@ -69,7 +69,7 @@ PAYLOAD
 
     it "prints its entry in the table" do
       cf %W[dea-ads]
-      expect(output).to say(/^2\s+lucid64, lucid86\s+6\s+1256$/)
+      expect(output).to say(/^2\s+lucid64, lucid86\s+6\s+1\.2G$/)
     end
 
     context "and another advertise is seen" do
@@ -99,12 +99,12 @@ PAYLOAD
 
         it "prints its entry in the table" do
           cf %W[dea-ads]
-          expect(output).to say(/^3\s+lucid64\s+5\s+1024$/)
+          expect(output).to say(/^3\s+lucid64\s+5\s+1\.0G$/)
         end
 
         it "keeps the other entry in the table" do
           cf %W[dea-ads]
-          expect(output).to say(/^2\s+lucid64, lucid86\s+6\s+1256$/)
+          expect(output).to say(/^2\s+lucid64, lucid86\s+6\s+1\.2G$/)
         end
 
         it "sorts the rows by DEA index" do
@@ -132,12 +132,12 @@ PAYLOAD
 
         it "clears the original entry" do
           cf %W[dea-ads]
-          expect(output).to_not say("1256")
+          expect(output).to_not say("1.2G")
         end
 
         it "shows the difference from the last advertisement" do
           cf %W[dea-ads]
-          expect(output).to say(/^2\s+lucid64\s+5 \(-1\)\s+1000 \(-256\)$/)
+          expect(output).to say(/^2\s+lucid64\s+5 \(-1\)\s+1000\.0M \(-256\.0M\)$/)
         end
       end
     end

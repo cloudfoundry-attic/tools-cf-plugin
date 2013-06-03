@@ -49,23 +49,27 @@ module CFTools
           [ c(idx, :name),
             list(attrs["stacks"]),
             diff(attrs, prev) { |x| x["app_id_to_count"].values.inject(&:+) },
-            diff(attrs, prev, :pretty_memory) { |x| x["available_memory"] }
+            diff(attrs, prev, :pretty_memory, :pretty_memory_diff) do |x|
+              x["available_memory"]
+            end
           ]
         end
 
       table(["dea", "stacks", "droplets", "available memory"], rows)
     end
 
-    def diff(curr, prev, pretty = nil)
+    def diff(curr, prev, pretty = nil, pretty_diff = :signed)
       new = yield curr
       old = yield prev if prev
+      diff = new - old if old
 
       display = pretty ? send(pretty, new) : new.to_s
+      diff_display = pretty_diff ? send(pretty_diff, diff) : diff.to_s if diff
 
       if !old || new == old
         display
       else
-        "#{display} (#{signed(new - old)})"
+        "#{display} (#{diff_display})"
       end
     end
 
@@ -74,13 +78,44 @@ module CFTools
     end
 
     def pretty_memory(mem)
+      human = human_mb(mem)
+
       if mem < 1024
-        c(mem.to_s, :bad)
+        c(human, :bad)
       elsif mem < 2048
-        c(mem.to_s, :warning)
+        c(human, :warning)
       else
-        c(mem.to_s, :good)
+        c(human, :good)
       end
+    end
+
+    def pretty_memory_diff(diff)
+      human = human_mb(diff)
+
+      if diff < 0
+        c(human, :bad)
+      else
+        c("+#{human}", :good)
+      end
+    end
+
+    def human_mb(mem)
+      human_size(mem * 1024 * 1024)
+    end
+
+    def human_size(num, precision = 1)
+      abs = num.abs
+
+      sizes = %w(T G M K)
+      sizes.each.with_index do |suf, i|
+        pow = sizes.size - i
+        unit = 1024.0 ** pow
+        if abs >= unit
+          return format("%.#{precision}f%s", num / unit, suf)
+        end
+      end
+
+      format("%.#{precision}fB", num)
     end
 
     def list(vals)

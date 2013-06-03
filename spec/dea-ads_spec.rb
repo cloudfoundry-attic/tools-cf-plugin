@@ -6,13 +6,19 @@ describe CFTools::DEAAds do
   before { stub_client }
 
   before do
-    stub(NATS).start(anything).yields
+    stub(NATS).start.yields
     stub(NATS).subscribe
     stub(EM).add_periodic_timer.yields
   end
 
   it "subscribes to dea.advertise" do
     mock(NATS).subscribe("dea.advertise")
+    cf %W[dea-ads]
+  end
+
+  it "refreshes every 3 seconds" do
+    mock(EM).add_periodic_timer(3).yields
+    mock.instance_of(described_class).render_table
     cf %W[dea-ads]
   end
 

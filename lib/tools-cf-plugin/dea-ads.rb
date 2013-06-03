@@ -29,7 +29,7 @@ module CFTools
           advertisements[id] = [payload, prev && prev.first]
         end
 
-        EM.add_periodic_timer(2) do
+        EM.add_periodic_timer(3) do
           render_table
         end
       end
@@ -49,26 +49,38 @@ module CFTools
           [ c(idx, :name),
             list(attrs["stacks"]),
             diff(attrs, prev) { |x| x["app_id_to_count"].values.inject(&:+) },
-            diff(attrs, prev) { |x| x["available_memory"] }
+            diff(attrs, prev, :pretty_memory) { |x| x["available_memory"] }
           ]
         end
 
       table(["dea", "stacks", "droplets", "available memory"], rows)
     end
 
-    def diff(curr, prev)
+    def diff(curr, prev, pretty = nil)
       new = yield curr
       old = yield prev if prev
 
+      display = pretty ? send(pretty, new) : new.to_s
+
       if !old || new == old
-        new.to_s
+        display
       else
-        "#{new} (#{signed(new - old)})"
+        "#{display} (#{signed(new - old)})"
       end
     end
 
     def signed(num)
-      num > 0 ? "+#{num}" : num
+      num > 0 ? c("+#{num}", :good) : c(num, :bad)
+    end
+
+    def pretty_memory(mem)
+      if mem < 1024
+        c(mem.to_s, :bad)
+      elsif mem < 2048
+        c(mem.to_s, :warning)
+      else
+        c(mem.to_s, :good)
+      end
     end
 
     def list(vals)

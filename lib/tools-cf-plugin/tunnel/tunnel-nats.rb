@@ -7,17 +7,26 @@ require "cf/cli"
 require "tools-cf-plugin/tunnel/base"
 
 module CFTools::Tunnel
-  class Watch < Base
-    desc "Watch, by grabbing the connection info from your BOSH deployment."
+  class TunnelNATS < Base
+    def self.command_by_name
+      proc do |name|
+        @@commands[name.gsub("-", "_").to_sym] || \
+          fail("Unknown command '#{name}'.")
+      end
+    end
+
+    desc "Invoke another command with a local tunnel to a remote NATS."
     input :director, :argument => :required, :desc => "BOSH director address"
-    input :app, :argument => :optional, :from_given => by_name(:app),
-          :desc => "Application to watch"
+    input :command, :argument => :required, :from_given => command_by_name,
+          :desc => "Command to invoke"
+    input :args, :argument => :splat, :desc => "Arguments for wrapped command"
     input :gateway, :default => proc { "vcap@#{input[:director]}" },
           :desc => "SSH connection string (default: vcap@director)"
-    def tunnel_watch
+    def tunnel_nats
+      command = input[:command]
       director_host = input[:director]
-      app = input[:app]
       gateway = input[:gateway]
+      args = input[:args]
 
       director = connected_director(director_host, gateway)
 
@@ -37,8 +46,14 @@ module CFTools::Tunnel
         login_as_admin(manifest)
       end
 
-      invoke :watch, :app => app, :port => nport,
-             :user => nats["user"], :password => nats["password"]
+      execute(
+        command,
+        args + %W[
+          --user #{nats["user"]}
+          --password #{nats["password"]}
+          --port #{nport}
+        ],
+        input.global)
     end
 
     private
@@ -48,7 +63,7 @@ module CFTools::Tunnel
       admin_user, admin_pass, _ = admin.split("|", 3)
 
       @@client = CFoundry::V2::Client.new(manifest["properties"]["cc"]["srv_api_uri"])
-      client.login(admin_user, admin_pass)
+      @@client.login(admin_user, admin_pass)
     end
   end
 end

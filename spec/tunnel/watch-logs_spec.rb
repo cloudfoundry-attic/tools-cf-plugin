@@ -107,6 +107,13 @@ module CFTools::Tunnel
         expect(output).to say("dea_next/1           01:02:04 AM  warn    b\n")
         expect(output).to say("dea_next/0           01:02:05 AM  error   c\n")
       end
+
+      context "and components were specified" do
+        it "streams their locations" do
+          mock(stream).stream(["cloud_controller", 0] => anything)
+          cf %W[watch-logs some-director.com cloud_controller]
+        end
+      end
     end
   end
 end

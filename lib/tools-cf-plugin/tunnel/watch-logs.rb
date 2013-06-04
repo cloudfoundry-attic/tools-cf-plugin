@@ -16,11 +16,12 @@ module CFTools::Tunnel
 
     desc "Stream logs from the jobs of a deployment"
     input :director, :argument => :required, :desc => "BOSH director address"
-    input :gateway, :argument => :optional, 
-          :default => proc { "vcap@#{input[:director]}" },
+    input :components, :argument => :splat, :desc => "Which components to log"
+    input :gateway, :default => proc { "vcap@#{input[:director]}" },
           :desc => "SSH connection string (default: vcap@director)"
     def watch_logs
       director_host = input[:director]
+      components = input[:components]
       gateway = input[:gateway]
 
       director = connected_director(director_host, gateway)
@@ -32,7 +33,7 @@ module CFTools::Tunnel
 
       locations =
         with_progress("Finding logs for #{c(deployment["name"], :name)}") do
-          locs = stream_locations(director, deployment["name"])
+          locs = stream_locations(director, deployment["name"], components)
 
           if locs.empty?
             fail "No locations found."
@@ -69,16 +70,19 @@ module CFTools::Tunnel
       ].join("  ")
     end
 
-    def stream_locations(director, deployment)
+    def stream_locations(director, deployment, components)
       locations = Hash.new { |h, k| h[k] = [] }
+
+      logs = LOGS.dup
+      logs.select! { |l, _| components.include?(l) } unless components.empty?
 
       director.fetch_vm_state(deployment, :use_cache => false).each do |vm|
         name = vm["job_name"]
         index = vm["index"]
-        next unless LOGS.key?(name)
+        next unless logs.key?(name)
 
         vm["ips"].each do |ip|
-          LOGS[name].each do |file|
+          logs[name].each do |file|
             locations[[name, index]] << StreamLocation.new(file, "#{name}/#{index}")
           end
         end

@@ -21,9 +21,8 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "pry"
 
   s.add_development_dependency "rake", ">= 0.9"
-  s.add_development_dependency "rspec", "~> 2.11"
+  s.add_development_dependency "rspec", ">= 2.14.0.rc1", "< 3.0"
   s.add_development_dependency "webmock", "~> 1.9"
-  s.add_development_dependency "rr", "~> 1.0"
   s.add_development_dependency "gem-release"
   s.add_development_dependency "timecop", "~> 0.6.1"
   s.add_development_dependency "shoulda-matchers", "~> 1.5.6"

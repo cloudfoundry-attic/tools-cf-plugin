@@ -6,25 +6,25 @@ describe CFTools::DEAAds do
   before { stub_client }
 
   before do
-    stub(NATS).start.yields
-    stub(NATS).subscribe
-    stub(EM).add_periodic_timer.yields
+    NATS.stub(:start).and_yield
+    NATS.stub(:subscribe)
+    EM.stub(:add_periodic_timer).and_yield
   end
 
   it "subscribes to dea.advertise" do
-    mock(NATS).subscribe("dea.advertise")
+    expect(NATS).to receive(:subscribe).with("dea.advertise")
     cf %W[dea-ads]
   end
 
   it "refreshes every 3 seconds" do
-    mock(EM).add_periodic_timer(3).yields
-    mock.instance_of(described_class).render_table
+    expect(EM).to receive(:add_periodic_timer).with(3).and_yield
+    expect_any_instance_of(described_class).to receive(:render_table)
     cf %W[dea-ads]
   end
 
   context "when no NATS server info is specified" do
     it "connects on nats:nats@127.0.0.1:4222" do
-      mock(NATS).start(hash_including(
+      expect(NATS).to receive(:start).with(hash_including(
         :uri => "nats://nats:nats@127.0.0.1:4222"))
 
       cf %W[dea-ads]
@@ -33,7 +33,7 @@ describe CFTools::DEAAds do
 
   context "when NATS server info is specified" do
     it "connects to the given location using the given credentials" do
-      mock(NATS).start(hash_including(
+      expect(NATS).to receive(:start).with(hash_including(
         :uri => "nats://someuser:somepass@example.com:4242"))
 
       cf %W[dea-ads -h example.com -P 4242 -u someuser -p somepass]
@@ -64,7 +64,7 @@ describe CFTools::DEAAds do
 PAYLOAD
 
     before do
-      stub(NATS).subscribe.yields(advertise)
+      NATS.stub(:subscribe).and_yield(advertise)
     end
 
     it "prints its entry in the table" do
@@ -74,10 +74,7 @@ PAYLOAD
 
     context "and another advertise is seen" do
       before do
-        stub(NATS).subscribe do |_, blk|
-          blk.call(advertise)
-          blk.call(other_advertise)
-        end
+        NATS.stub(:subscribe).and_yield(advertise).and_yield(other_advertise)
       end
 
       context "from a different DEA" do

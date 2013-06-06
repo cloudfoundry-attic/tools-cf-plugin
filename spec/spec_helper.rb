@@ -14,7 +14,6 @@ require "#{SPEC_ROOT}/../lib/tools-cf-plugin/plugin"
 
 RSpec.configure do |c|
   c.include Fake::FakeMethods
-  c.mock_with :rr
 
   c.include FakeHomeDir
   c.include CliHelper

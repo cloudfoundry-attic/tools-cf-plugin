@@ -2,12 +2,12 @@ require "spec_helper"
 
 module CFTools::Tunnel
   describe MultiLineStream do
-    let(:director) { stub }
+    let(:director) { double }
     let(:deployment) { "some-deployment" }
     let(:gateway_user) { "vcap" }
     let(:gateway_host) { "vcap.me" }
 
-    let(:gateway) { stub }
+    let(:gateway) { double }
     let(:entries) { Queue.new }
 
     subject do
@@ -15,10 +15,10 @@ module CFTools::Tunnel
     end
 
     before do
-      stub(subject).create_ssh_user { ["1.2.3.4", "some_user_1"] }
-      stub(subject).gateway { gateway }
-      stub(subject).entry_queue { entries }
-      stub(Thread).new { |blk| blk.call }
+      subject.stub(:create_ssh_user => ["1.2.3.4", "some_user_1"])
+      subject.stub(:gateway => gateway)
+      subject.stub(:entry_queue => entries)
+      Thread.stub(:new).and_yield
     end
 
     describe "#stream" do
@@ -36,14 +36,14 @@ module CFTools::Tunnel
       end
 
       it "spawns a SSH tunnel for each location" do
-        mock(Thread).new { |blk| blk.call }.ordered
-        mock(Thread).new { |blk| blk.call }.ordered
+        expect(Thread).to receive(:new).ordered
+        expect(Thread).to receive(:new).ordered
 
-        mock(subject).create_ssh_user("foo", 0, entries) { ["1.2.3.4", "some_user_1"] }
-        mock(subject).create_ssh_user("bar", 0, entries) { ["1.2.3.5", "some_user_2"] }
+        expect(subject).to receive(:create_ssh_user).with("foo", 0, entries) { ["1.2.3.4", "some_user_1"] }
+        expect(subject).to receive(:create_ssh_user).with("bar", 0, entries) { ["1.2.3.5", "some_user_2"] }
 
-        mock(gateway).ssh("1.2.3.4", "some_user_1")
-        mock(gateway).ssh("1.2.3.5", "some_user_2")
+        expect(gateway).to receive(:ssh).with("1.2.3.4", "some_user_1")
+        expect(gateway).to receive(:ssh).with("1.2.3.5", "some_user_2")
 
         entries << nil
 
@@ -51,7 +51,7 @@ module CFTools::Tunnel
       end
 
       it "streams from each location" do
-        ssh = stub
+        ssh = double
 
         locations = {
           "1.2.3.4" => [
@@ -65,11 +65,11 @@ module CFTools::Tunnel
 
         locations.each do |_, locs|
           locs.each do |loc|
-            mock(loc).stream_lines(ssh)
+            expect(loc).to receive(:stream_lines).with(ssh)
           end
         end
 
-        stub(gateway).ssh { |_, _, blk| blk.call(ssh) }
+        gateway.stub(:ssh).and_yield(ssh)
 
         entries << nil
 

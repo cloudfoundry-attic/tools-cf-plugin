@@ -6,7 +6,7 @@ module CFTools::Tunnel
 
     let(:director) { Bosh::Cli::Director.new(director_uri) }
 
-    let(:stream) { stub }
+    let(:stream) { double }
 
     let(:vms) do
       [ { "ips" => ["1.2.3.4"], "job_name" => "cloud_controller", "index" => 0 },
@@ -32,29 +32,29 @@ module CFTools::Tunnel
     end
 
     before do
-      stub(director).list_deployments { deployments }
-      stub(director).fetch_vm_state { vms }
-      stub_cli.connected_director { director }
+      director.stub(:list_deployments => deployments)
+      director.stub(:fetch_vm_state => vms)
+      described_class.any_instance.stub(:connected_director => director)
 
-      stub(stream).stream
-      stub_cli.stream_for { stream }
+      stream.stub(:stream)
+      described_class.any_instance.stub(:stream_for => stream)
     end
 
     it "connects to the given director" do
-      mock_cli.connected_director(
-          "some-director.com", "someuser@somehost.com") do
-        director
-      end
+      expect_any_instance_of(described_class).to \
+        receive(:connected_director).with(
+          "some-director.com", "someuser@somehost.com").
+        and_return(director)
 
       cf %W[watch-logs some-director.com --gateway someuser@somehost.com]
     end
 
     context "when no gateway user/host is specified" do
       it "defaults to vcap@director" do
-        mock_cli.connected_director(
-            "some-director.com", "vcap@some-director.com") do
-          director
-        end
+        expect_any_instance_of(described_class).to \
+          receive(:connected_director).with(
+            "some-director.com", "vcap@some-director.com").
+            and_return(director)
 
         cf %W[watch-logs some-director.com]
       end
@@ -71,11 +71,10 @@ module CFTools::Tunnel
 
     context "when there are jobs to log" do
       it "streams their locations" do
-        mock(stream).stream(anything) do |locations, blk|
-          expect(locations).to include(["cloud_controller", 0])
-          expect(locations).to include(["dea_next", 0])
-          expect(locations).to include(["dea_next", 1])
-        end
+        expect(stream).to receive(:stream).with(hash_including(
+          ["cloud_controller", 0] => anything,
+          ["dea_next", 0] => anything,
+          ["dea_next", 1] => anything))
 
         cf %W[watch-logs some-director.com]
       end
@@ -100,11 +99,7 @@ module CFTools::Tunnel
           %Q[{"message":"c","timestamp":#{entry3_time.to_f},"log_level":"error"}],
           :stdout)
 
-        mock(stream).stream(anything) do |locations, blk|
-          blk.call(entry1)
-          blk.call(entry2)
-          blk.call(entry3)
-        end
+        expect(stream).to receive(:stream).and_yield(entry1).and_yield(entry2).and_yield(entry3)
 
         cf %W[watch-logs some-director.com]
 

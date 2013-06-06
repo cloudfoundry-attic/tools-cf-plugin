@@ -6,10 +6,10 @@ describe CFTools::Shell do
   before { stub_client }
 
   it "starts a pry session with :quiet" do
-    binding = stub
+    binding = double
 
-    mock.instance_of(described_class).binding { binding }
-    mock(binding).pry :quiet => true
+    expect_any_instance_of(described_class).to receive(:binding).and_return(binding)
+    expect(binding).to receive(:pry).with(:quiet => true)
 
     cf %w[shell]
   end

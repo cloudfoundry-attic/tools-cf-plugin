@@ -23,15 +23,15 @@ describe CFTools::Tunnel::StreamLocation do
   end
 
   describe "#stream_lines" do
-    let(:ssh) { stub }
+    let(:ssh) { double }
 
     it "tails the file under /var/vcap/sys/log" do
-      mock(ssh).exec("tail -f /var/vcap/sys/log/#{path}")
+      expect(ssh).to receive(:exec).with("tail -f /var/vcap/sys/log/#{path}")
       subject.stream_lines(ssh)
     end
 
     it "yields log entries as lines come through the channel" do
-      stub(ssh).exec { |_, blk| blk.call({}, :stdout, "foo\nbar\n") }
+      ssh.stub(:exec).and_yield({}, :stdout, "foo\nbar\n")
 
       lines = []
       subject.stream_lines(ssh) do |entry|
@@ -43,10 +43,7 @@ describe CFTools::Tunnel::StreamLocation do
 
     it "merges chunks that form a complete line" do
       channel = {}
-      stub(ssh).exec do |_, blk|
-        blk.call(channel, :stdout, "fo")
-        blk.call(channel, :stdout, "o\nbar\n")
-      end
+      ssh.stub(:exec).and_yield(channel, :stdout, "fo").and_yield(channel, :stdout, "o\nbar\n")
 
       lines = []
       subject.stream_lines(ssh) do |entry|

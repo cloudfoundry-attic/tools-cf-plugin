@@ -72,6 +72,25 @@ PAYLOAD
       expect(output).to say(/^2\s+lucid64, lucid86\s+6\s+1\.2G$/)
     end
 
+    context "and it has no apps" do
+      let(:advertise) { <<PAYLOAD }
+{
+  "app_id_to_count": {},
+  "available_memory": 1256,
+  "stacks": [
+    "lucid64"
+  ],
+  "prod": false,
+  "id": "2-1d0cf3bcd994d9f2c5ea22b9b624d77b"
+}
+PAYLOAD
+
+      it "prints 0 as the droplet count" do
+        cf %W[dea-ads]
+        expect(output).to say(/^2\s+lucid64\s+0\s+1\.2G$/)
+      end
+    end
+
     context "and another advertise is seen" do
       before do
         NATS.stub(:subscribe).and_yield(advertise).and_yield(other_advertise)

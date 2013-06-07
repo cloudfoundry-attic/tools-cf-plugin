@@ -48,7 +48,7 @@ module CFTools
 
           [ c(idx, :name),
             list(attrs["stacks"]),
-            diff(attrs, prev) { |x| x["app_id_to_count"].values.inject(&:+) },
+            diff(attrs, prev) { |x| x["app_id_to_count"].values.inject(0, &:+) },
             diff(attrs, prev, :pretty_memory, :pretty_memory_diff) do |x|
               x["available_memory"]
             end

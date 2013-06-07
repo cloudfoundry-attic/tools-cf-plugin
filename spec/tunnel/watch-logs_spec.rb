@@ -110,7 +110,7 @@ module CFTools::Tunnel
 
       context "and components were specified" do
         it "streams their locations" do
-          mock(stream).stream(["cloud_controller", 0] => anything)
+          expect(stream).to receive(:stream).with(["cloud_controller", 0] => anything)
           cf %W[watch-logs some-director.com cloud_controller]
         end
       end

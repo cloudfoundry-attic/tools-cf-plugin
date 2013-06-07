@@ -20,7 +20,16 @@ module CFTools
 
         locations.each do |(name, index), locs|
           Thread.new do
-            stream_location(name, index, locs, entries)
+            begin
+              stream_location(name, index, locs, entries)
+            rescue => e
+              entries << LogEntry.new(
+                "#{name}/#{index}",
+                c("failed: #{e.class}: #{e}", :error),
+                :stdout)
+
+              retry
+            end
           end
         end
 

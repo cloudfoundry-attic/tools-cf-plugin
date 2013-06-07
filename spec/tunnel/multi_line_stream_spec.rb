@@ -75,6 +75,22 @@ module CFTools::Tunnel
 
         subject.stream(locations)
       end
+
+      context "when streaming fails" do
+        it "retries" do
+          called = 0
+          subject.stub(:stream_location) do
+            called += 1
+            raise "boom" if called == 1
+          end
+
+          entries << nil
+
+          subject.stream("1.2.3.4" => [])
+
+          expect(called).to eq(2)
+        end
+      end
     end
   end
 end

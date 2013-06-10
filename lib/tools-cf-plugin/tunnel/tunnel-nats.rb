@@ -30,6 +30,8 @@ module CFTools::Tunnel
 
       director = connected_director(director_host, gateway)
 
+      line "Director: #{director.director_uri}"
+
       manifest =
         with_progress("Downloading deployment manifest") do
           current_deployment_manifest(director)
@@ -45,6 +47,8 @@ module CFTools::Tunnel
       with_progress("Logging in as admin user") do
         login_as_admin(manifest)
       end
+
+      line "NATS connection: nats://#{nats["user"]}:#{nats["password"]}@127.0.0.1:#{nport}"
 
       execute(
         command,

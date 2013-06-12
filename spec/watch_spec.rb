@@ -847,8 +847,8 @@ PAYLOAD
   "uptime": "0d:23h:51m:21s",
   "start": "2013-05-24 17:58:08 +0000",
   "credentials": [
-    "d34f205a31232eef040d1e39ebdd631a",
-    "701e1a68a811a1ac8c137a70db08c1a8"
+    "user",
+    "pass"
   ],
   "host": "1.2.3.4:8080",
   "uuid": "4-deadbeef",
@@ -873,7 +873,7 @@ PAYLOAD
       it "pretty-prints the response" do
         cf %W[watch]
 
-        expect(output).to say("reply to vcap.component.discover (1)\ttype: DEA, index: 4, host: 1.2.3.4:8080, uptime: 0d:23h:51m:21s")
+        expect(output).to say("reply to vcap.component.discover (1)\ttype: DEA, index: 4, uri: user:pass@1.2.3.4:8080, uptime: 0d:23h:51m:21s")
       end
 
       context "and there's no uptime" do

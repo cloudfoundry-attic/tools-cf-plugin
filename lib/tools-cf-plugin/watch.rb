@@ -405,12 +405,13 @@ module CFTools
       type = payload["type"]
       index = payload["index"]
       host = payload["host"]
+      user, pass = payload["credentials"]
       uptime = payload["uptime"]
 
       message = [
         "type: #{type}",
         "index: #{index}",
-        "host: #{host}"
+        "uri: #{user}:#{pass}@#{host}"
       ]
 
       message << "uptime: #{uptime}" if uptime

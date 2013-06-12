@@ -138,7 +138,11 @@ module CFTools
       payload = JSON.parse(msg)
       dea, _ = payload["id"].split("-", 2)
       [ d(sub),
-        "dea: #{dea}, stacks: #{list(payload["stacks"])}, available mem: #{human_mb(payload["available_memory"])}, apps: #{pretty_app_count(payload["app_id_to_count"])}"
+        [ "dea: #{dea}",
+          "stacks: #{list(payload["stacks"])}",
+          "available mem: #{human_mb(payload["available_memory"])}",
+          "apps: #{pretty_app_count(payload["app_id_to_count"] || [])}"
+        ].join(", ")
       ]
     end
 

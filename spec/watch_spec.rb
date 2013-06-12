@@ -239,6 +239,25 @@ PAYLOAD
 
         expect(output).to say("dea: 1, stacks: lucid64, available mem: 29G, apps: 1 x myapp, 2 x unknown")
       end
+
+      context "and it does not include app counts" do
+        let(:payload) { <<PAYLOAD }
+{
+  "available_memory": 30000,
+  "stacks": [
+    "lucid64"
+  ],
+  "prod": false,
+  "id": "1-f158dcd026d1589853846a3859faf0ea"
+}
+PAYLOAD
+
+        it "prints 'none' for the app listing" do
+          cf %W[watch]
+
+          expect(output).to say("dea: 1, stacks: lucid64, available mem: 29G, apps: none")
+        end
+      end
     end
   end
 

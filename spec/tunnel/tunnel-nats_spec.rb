@@ -2,7 +2,7 @@ require "spec_helper"
 
 module CFTools::Tunnel
   describe TunnelNATS do
-    let(:director) { double }
+    let(:director) { double :director, :director_uri => "http://example.com" }
 
     let(:deployments) do
       [{ "name" => "some-deployment",  "releases" => [{ "name" => "cf-release" }] }]

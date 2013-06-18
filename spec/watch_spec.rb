@@ -1,7 +1,7 @@
 require "spec_helper"
 
 describe CFTools::Watch do
-  let(:app) { fake :app, :name => "myapp", :guid => "myappguid" }
+  let!(:app) { fake :app, :name => "myapp", :guid => "myappguid" }
 
   let(:client) { fake_client :apps => [app] }
 
@@ -36,12 +36,12 @@ describe CFTools::Watch do
   context "when no application is given" do
     around { |example| Timecop.freeze(&example) }
 
-    let(:messages) { [["some-message", nil, "some.subject"]] }
+    let(:messages) { [['{"some-message":"bar"}', nil, "some.subject"]] }
 
     it "prints a timestamp, message, and raw body" do
       cf %W[watch]
 
-      expect(output).to say(/#{Time.now.strftime("%r")}\s*some.subject\s*some-message/)
+      expect(output).to say(/#{Time.now.strftime("%r")}\s*some.subject\s*{"some-message":"bar"}/)
     end
   end
 
@@ -79,16 +79,16 @@ describe CFTools::Watch do
   context "when a message comes in with a reply channel, followed by a reply" do
     let(:messages) do
       [
-        ["foo", "some-reply", "some.subject"],
-        ["some-response", nil, "some-reply"]
+        ['{"foo":"bar"}', "some-reply", "some.subject"],
+        ['{"some-response":"other"}', nil, "some-reply"]
       ]
     end
 
     it "registers it in #requests" do
       cf %W[watch]
 
-      expect(output).to say(/some\.subject             \(1\)\s*foo/)
-      expect(output).to say(/`- reply to some\.subject \(1\)\s+some-response/)
+      expect(output).to say(/some\.subject             \(1\)\s*{"foo":"bar"}/)
+      expect(output).to say(/`- reply to some\.subject \(1\)\s+{"some-response":"other"}/)
     end
   end
 
@@ -107,12 +107,12 @@ describe CFTools::Watch do
     context "and a message containing the app's GUID is seen" do
       around { |example| Timecop.freeze(&example) }
 
-      let(:messages) { [["some-message-mentioning-#{app.guid}", nil, "some.subject"]] }
+      let(:messages) { [["{\"foo\":\"some-message-mentioning-#{app.guid}\"}", nil, "some.subject"]] }
 
       it "prints a timestamp, message, and raw body" do
         cf %W[watch myapp]
 
-        expect(output).to say(/#{Time.now.strftime("%r")}\s*some.subject\s*some-message-mentioning-#{app.guid}/)
+        expect(output).to say(/#{Time.now.strftime("%r")}\s*some.subject\s*{"foo":"some-message-mentioning-#{app.guid}"}/)
       end
     end
 
@@ -303,8 +303,9 @@ PAYLOAD
   context "when a message is seen with subject router.register" do
     let(:subject) { "router.register" }
 
-    context "when there's an associated DEA" do
-      let(:payload) { <<PAYLOAD }
+    context "when the app flag is passed in" do
+      context "when there's an associated DEA" do
+        let(:payload) { <<PAYLOAD }
 {
   "private_instance_id": "e4a5ee2330c81fd7611eba7dbedbb499a00ae1b79f97f40a3603c8bff6fbcc6f",
   "tags": {},
@@ -319,10 +320,34 @@ PAYLOAD
 }
 PAYLOAD
 
-      it "prints the uris, host, and port" do
+        it "prints the uris, host, and port" do
+          cf %W[watch --app #{app.name}]
+
+          expect(output).to say("app: myapp, dea: 1, uris: my-app.com, my-app-2.com, host: 192.0.43.10, port: 61111")
+        end
+      end
+    end
+
+    context "when the app flag is not passed in" do
+      let(:payload) { <<PAYLOAD }
+{
+  "private_instance_id": "e4a5ee2330c81fd7611eba7dbedbb499a00ae1b79f97f40a3603c8bff6fbcc6f",
+  "tags": {},
+  "port": 61111,
+  "host": "192.0.43.10",
+  "uris": [
+    "my-app.com",
+    "my-app-2.com"
+  ],
+  "app": "some_unkown_guid",
+  "dea": "1-4b293b726167fbc895af5a7927c0973a"
+}
+PAYLOAD
+
+      it "does not print anything" do
         cf %W[watch]
 
-        expect(output).to say("app: myapp, dea: 1, uris: my-app.com, my-app-2.com, host: 192.0.43.10, port: 61111")
+        expect(output).to_not say("uris: my-app.com, my-app-2.com, host: 192.0.43.10, port: 61111")
       end
     end
 
@@ -881,8 +906,8 @@ PAYLOAD
 {
   "start": "2013-05-24 17:58:08 +0000",
   "credentials": [
-    "d34f205a31232eef040d1e39ebdd631a",
-    "701e1a68a811a1ac8c137a70db08c1a8"
+    "user",
+    "pass"
   ],
   "host": "1.2.3.4:8080",
   "uuid": "1-deadbeef",
@@ -894,7 +919,7 @@ PAYLOAD
         it "does not include it in the message" do
           cf %W[watch]
 
-          expect(output).to say("reply to vcap.component.discover (1)\ttype: login, index: 1, host: 1.2.3.4:8080")
+          expect(output).to say("reply to vcap.component.discover (1)\ttype: login, index: 1, uri: user:pass@1.2.3.4:8080")
         end
       end
     end

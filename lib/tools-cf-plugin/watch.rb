@@ -65,6 +65,8 @@ module CFTools
     def process_message(sub, reply, msg, app)
       register_request(sub, reply) if reply
 
+      parsed_msg = JSON.parse(msg)
+
       case sub
       when "dea.advertise"
         return if app
@@ -79,7 +81,7 @@ module CFTools
       when "router.start"
         sub, msg = pretty_router_start(sub, msg)
       when "router.register"
-        return unless app
+        return if !app && parsed_msg.has_key?("dea")
         sub, msg = pretty_register(sub, msg)
       when "router.unregister"
         sub, msg = pretty_unregister(sub, msg)

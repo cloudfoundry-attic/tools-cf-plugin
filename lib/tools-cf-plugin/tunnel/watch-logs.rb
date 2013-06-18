@@ -67,7 +67,7 @@ module CFTools::Tunnel
         entry.timestamp.strftime("%r"),
         "#{pretty_log_level(log_level)}#{level_padding}",
         level_colored_message(entry),
-        entry.data.inspect
+        entry.data ? entry.data.inspect : ""
       ].join("  ")
     end
 

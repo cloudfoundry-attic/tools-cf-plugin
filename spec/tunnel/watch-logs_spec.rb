@@ -91,7 +91,7 @@ module CFTools::Tunnel
 
         entry2 = LogEntry.new(
           "dea_next/1",
-          %Q[{"message":"b","timestamp":#{entry2_time.to_f},"log_level":"warn"}],
+          %Q[{"message":"b","timestamp":#{entry2_time.to_f},"log_level":"warn","data":{"foo":"bar"}}],
           :stdout)
 
         entry3 = LogEntry.new(
@@ -103,9 +103,9 @@ module CFTools::Tunnel
 
         cf %W[watch-logs some-director.com]
 
-        expect(output).to say("cloud_controller/0   01:02:03 AM  info    a\n")
-        expect(output).to say("dea_next/1           01:02:04 AM  warn    b\n")
-        expect(output).to say("dea_next/0           01:02:05 AM  error   c\n")
+        expect(output).to say("cloud_controller/0   01:02:03 AM  info    a  \n")
+        expect(output).to say("dea_next/1           01:02:04 AM  warn    b  {\"foo\"=>\"bar\"}\n")
+        expect(output).to say("dea_next/0           01:02:05 AM  error   c  \n")
       end
 
       context "and components were specified" do

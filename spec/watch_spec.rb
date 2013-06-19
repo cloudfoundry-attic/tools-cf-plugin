@@ -41,7 +41,7 @@ describe CFTools::Watch do
     it "prints a timestamp, message, and raw body" do
       cf %W[watch]
 
-      expect(output).to say(/#{Time.now.strftime("%r")}\s*some.subject\s*{"some-message":"bar"}/)
+      expect(output).to say(/#{Time.now.strftime("%r")}\s*some.subject\s*{"some-message"=>"bar"}/)
     end
   end
 
@@ -87,8 +87,8 @@ describe CFTools::Watch do
     it "registers it in #requests" do
       cf %W[watch]
 
-      expect(output).to say(/some\.subject             \(1\)\s*{"foo":"bar"}/)
-      expect(output).to say(/`- reply to some\.subject \(1\)\s+{"some-response":"other"}/)
+      expect(output).to say(/some\.subject             \(1\)\s*{"foo"=>"bar"}/)
+      expect(output).to say(/`- reply to some\.subject \(1\)\s+{"some-response"=>"other"}/)
     end
   end
 
@@ -112,7 +112,7 @@ describe CFTools::Watch do
       it "prints a timestamp, message, and raw body" do
         cf %W[watch myapp]
 
-        expect(output).to say(/#{Time.now.strftime("%r")}\s*some.subject\s*{"foo":"some-message-mentioning-#{app.guid}"}/)
+        expect(output).to say(/#{Time.now.strftime("%r")}\s*some.subject\s*{"foo"=>"some-message-mentioning-#{app.guid}"}/)
       end
     end
 

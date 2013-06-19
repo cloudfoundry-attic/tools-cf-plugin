@@ -65,50 +65,50 @@ module CFTools
     def process_message(sub, reply, msg, app)
       register_request(sub, reply) if reply
 
-      parsed_msg = JSON.parse(msg)
+      payload = JSON.parse(msg) # rescue msg
 
       case sub
       when "dea.advertise"
         return if app
-        sub, msg = pretty_dea_advertise(sub, msg)
+        sub, payload = pretty_dea_advertise(sub, payload)
       when "staging.advertise"
         return if app
-        sub, msg = pretty_staging_advertise(sub, msg)
+        sub, payload = pretty_staging_advertise(sub, payload)
       when "droplet.exited"
-        sub, msg = pretty_exited(sub, msg)
+        sub, payload = pretty_exited(sub, payload)
       when "dea.heartbeat"
-        sub, msg = pretty_heartbeat(sub, msg, app)
+        sub, payload = pretty_heartbeat(sub, payload, app)
       when "router.start"
-        sub, msg = pretty_router_start(sub, msg)
+        sub, payload = pretty_router_start(sub, payload)
       when "router.register"
-        return if !app && parsed_msg.has_key?("dea")
-        sub, msg = pretty_register(sub, msg)
+        return if !app && payload.has_key?("dea")
+        sub, payload = pretty_register(sub, payload)
       when "router.unregister"
-        sub, msg = pretty_unregister(sub, msg)
+        sub, payload = pretty_unregister(sub, payload)
       when /^dea\.(\d+)-.*\.start$/
-        sub, msg = pretty_start(sub, msg, $1)
+        sub, payload = pretty_start(payload, $1)
       when "dea.stop"
-        sub, msg = pretty_stop(sub, msg)
+        sub, payload = pretty_stop(sub, payload)
       when "droplet.updated"
-        sub, msg = pretty_updated(sub, msg)
+        sub, payload = pretty_updated(sub, payload)
       when "dea.update"
-        sub, msg = pretty_dea_update(sub, msg)
+        sub, payload = pretty_dea_update(sub, payload)
       when "dea.find.droplet"
-        sub, msg = pretty_find_droplet(sub, msg)
+        sub, payload = pretty_find_droplet(sub, payload)
       when "healthmanager.status"
-        sub, msg = pretty_healthmanager_status(sub, msg)
+        sub, payload = pretty_healthmanager_status(sub, payload)
       when "healthmanager.health"
-        sub, msg = pretty_healthmanager_health(sub, msg)
+        sub, payload = pretty_healthmanager_health(sub, payload)
       when "dea.shutdown"
-        sub, msg = pretty_dea_shutdown(sub, msg)
+        sub, payload = pretty_dea_shutdown(sub, payload)
       when /^cloudcontrollers\.hm\.requests\.\w+$/
-        sub, msg = process_cloudcontrollers_hm_request(sub, msg)
+        sub, payload = process_cloudcontrollers_hm_request(payload)
       when /^([^.]+)\.announce$/
-        sub, msg = pretty_service_announcement(sub, msg)
+        sub, payload = pretty_service_announcement(sub, payload)
       when "vcap.component.announce"
-        sub, msg = pretty_component_announcement(sub, msg)
+        sub, payload = pretty_component_announcement(sub, payload)
       when "vcap.component.discover"
-        sub, msg = pretty_component_discover(sub, msg)
+        sub, payload = pretty_component_discover(sub, payload)
       end
 
       if reply
@@ -117,28 +117,29 @@ module CFTools
       end
 
       sub = sub.ljust(COLUMN_WIDTH)
-      line "#{timestamp}\t#{sub}\t#{msg}"
+      line "#{timestamp}\t#{sub}\t#{payload}"
     end
 
     def process_response(sub, _, msg, _)
+      payload = JSON.parse(msg) # rescue msg
+
       sub, id = @requests[sub]
 
       case sub
       when "dea.find.droplet"
-        sub, msg = pretty_find_droplet_response(sub, msg)
+        sub, payload = pretty_find_droplet_response(sub, payload)
       when "healthmanager.status"
-        sub, msg = pretty_healthmanager_status_response(sub, msg)
+        sub, payload = pretty_healthmanager_status_response(sub, payload)
       when "healthmanager.health"
-        sub, msg = pretty_healthmanager_health_response(sub, msg)
+        sub, payload = pretty_healthmanager_health_response(sub, payload)
       when "vcap.component.discover"
-        sub, msg = pretty_component_discover_response(sub, msg)
+        sub, payload = pretty_component_discover_response(sub, payload)
       end
 
-      line "#{timestamp}\t#{REPLY_PREFIX}#{sub} (#{c(id, :error)})\t#{msg}"
+      line "#{timestamp}\t#{REPLY_PREFIX}#{sub} (#{c(id, :error)})\t#{payload}"
     end
 
-    def pretty_dea_advertise(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_dea_advertise(sub, payload)
       dea, _ = payload["id"].split("-", 2)
       [ d(sub),
         [ "dea: #{dea}",
@@ -149,8 +150,7 @@ module CFTools
       ]
     end
 
-    def pretty_staging_advertise(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_staging_advertise(sub, payload)
       dea, _ = payload["id"].split("-", 2)
       [ d(sub),
         [ "dea: #{dea}",
@@ -164,8 +164,7 @@ module CFTools
       list(counts.collect { |g, c| "#{c} x #{pretty_app(g)}" })
     end
 
-    def pretty_exited(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_exited(sub, payload)
       [ c(sub, :bad),
         [ "app: #{pretty_app(payload["droplet"])}",
           "reason: #{payload["reason"]}",
@@ -174,8 +173,7 @@ module CFTools
       ]
     end
 
-    def pretty_heartbeat(sub, msg, app)
-      payload = JSON.parse(msg)
+    def pretty_heartbeat(sub, payload, app)
 
       dea, _ = payload["dea"].split("-", 2)
 
@@ -192,14 +190,11 @@ module CFTools
       ]
     end
 
-    def pretty_router_start(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_router_start(sub, payload)
       [c(sub, :neutral), "hosts: #{list(payload["hosts"])}"]
     end
 
-    def pretty_register(sub, msg)
-      payload = JSON.parse(msg)
-
+    def pretty_register(sub, payload)
       message = []
 
       if (dea_id = payload["dea"])
@@ -216,9 +211,7 @@ module CFTools
       [c(sub, :neutral), message.join(", ")]
     end
 
-    def pretty_unregister(sub, msg)
-      payload = JSON.parse(msg)
-
+    def pretty_unregister(sub, payload)
       message = []
 
       if (dea_id = payload["dea"])
@@ -235,8 +228,7 @@ module CFTools
       [c(sub, :warning), message.join(", ")]
     end
 
-    def pretty_start(sub, msg, dea)
-      payload = JSON.parse(msg)
+    def pretty_start(payload, dea)
       [ c("dea.#{dea}.start", :good),
         [ "app: #{pretty_app(payload["droplet"])}",
           "dea: #{dea}",
@@ -246,9 +238,7 @@ module CFTools
       ]
     end
 
-    def pretty_stop(sub, msg)
-      payload = JSON.parse(msg)
-
+    def pretty_stop(sub, payload)
       message = ["app: #{pretty_app(payload["droplet"])}"]
 
       if (indices = payload["indices"])
@@ -262,8 +252,7 @@ module CFTools
       [c(sub, :warning), message.join(", ")]
     end
 
-    def pretty_dea_update(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_dea_update(sub, payload)
       [ d(sub),
         [ "app: #{pretty_app(payload["droplet"])}",
           "uris: #{list(payload["uris"])}"
@@ -271,8 +260,7 @@ module CFTools
       ]
     end
 
-    def pretty_find_droplet(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_find_droplet(sub, payload)
       states = payload["states"].collect { |s| c(s.downcase, state_color(s))}
       [ d(sub),
         [ "app: #{pretty_app(payload["droplet"])}",
@@ -281,8 +269,7 @@ module CFTools
       ]
     end
 
-    def pretty_find_droplet_response(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_find_droplet_response(sub, payload)
       dea, _ = payload["dea"].split("-", 2)
       index = payload["index"]
       state = payload["state"]
@@ -296,8 +283,7 @@ module CFTools
       ]
     end
 
-    def pretty_healthmanager_status(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_healthmanager_status(sub, payload)
       state = payload["state"]
       [ d(sub),
         [ "app: #{pretty_app(payload["droplet"])}",
@@ -306,19 +292,16 @@ module CFTools
       ]
     end
 
-    def pretty_healthmanager_status_response(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_healthmanager_status_response(sub, payload)
       [sub, "indices: #{list(payload["indices"])}"]
     end
 
-    def pretty_healthmanager_health(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_healthmanager_health(sub, payload)
       apps = payload["droplets"].collect { |d| pretty_app(d["droplet"]) }
       [d(sub), "querying health for: #{list(apps)}"]
     end
 
-    def pretty_healthmanager_health_response(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_healthmanager_health_response(sub, payload)
       [ sub,
         [ "app: #{pretty_app(payload["droplet"])}",
           "healthy: #{payload["healthy"]}"
@@ -326,14 +309,11 @@ module CFTools
       ]
     end
 
-    def pretty_updated(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_updated(sub, payload)
       [d(sub), "app: #{pretty_app(payload["droplet"])}"]
     end
 
-    def pretty_dea_shutdown(sub, msg)
-      payload = JSON.parse(msg)
-
+    def pretty_dea_shutdown(sub, payload)
       dea, _ = payload["id"].split("-", 2)
 
       apps = payload["app_id_to_count"].collect do |guid, count|
@@ -343,8 +323,7 @@ module CFTools
       [c(sub, :error), "dea: #{dea}, apps: #{list(apps)}"]
     end
 
-    def process_cloudcontrollers_hm_request(sub, msg)
-      payload = JSON.parse(msg)
+    def process_cloudcontrollers_hm_request(payload)
       last_updated = Time.at(payload["last_updated"])
 
       op = payload["op"]
@@ -365,8 +344,7 @@ module CFTools
       [c("hm.request", :warning), message.join(", ")]
     end
 
-    def pretty_service_announcement(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_service_announcement(sub, payload)
       id = payload["id"]
       plan = payload["plan"]
       c_unit = payload["capacity_unit"]
@@ -383,8 +361,7 @@ module CFTools
       ]
     end
 
-    def pretty_component_announcement(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_component_announcement(sub, payload)
       type = payload["type"]
       index = payload["index"]
       uuid = payload["uuid"]
@@ -399,12 +376,11 @@ module CFTools
       ]
     end
 
-    def pretty_component_discover(sub, msg)
-      [d(sub), msg]
+    def pretty_component_discover(sub, payload)
+      [d(sub), payload]
     end
 
-    def pretty_component_discover_response(sub, msg)
-      payload = JSON.parse(msg)
+    def pretty_component_discover_response(sub, payload)
       type = payload["type"]
       index = payload["index"]
       host = payload["host"]

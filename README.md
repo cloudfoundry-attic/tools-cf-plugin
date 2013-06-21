@@ -22,4 +22,5 @@ gem "tools-cf-plugin"
 
 ```
 watch APP       Watch messages going over NATS relevant to an application
+dea-apps        See summary information about apps running on DEAs
 ```

@@ -94,7 +94,7 @@ module CFTools
         end
       end
 
-      table(["dea", "app_name", "app_guid", "org/space", "reserved", "dispensation"], rows)
+      table(["dea", "app_name", "app_guid", "org/space", "reserved", "math"], rows)
     end
 
     def human_mb(mem)

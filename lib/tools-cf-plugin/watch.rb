@@ -230,7 +230,7 @@ module CFTools
         [ "app: #{pretty_app(payload["droplet"])}",
           "dea: #{dea}",
           "index: #{payload["index"]}",
-          "uris: #{list(payload["uris"])}"
+          "uris: #{list(Array(payload["uris"]))}"
         ].join(", ")
       ]
     end

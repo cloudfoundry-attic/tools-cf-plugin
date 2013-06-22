@@ -458,6 +458,38 @@ PAYLOAD
 
       expect(output).to say("app: myapp, dea: 42, index: 2, uris: myapp.com")
     end
+
+    context "when a single uri is given as a string" do
+      let(:payload) { <<PAYLOAD }
+{
+  "index": 2,
+  "debug": null,
+  "console": true,
+  "env": [],
+  "cc_partition": "default",
+  "limits": {
+    "fds": 16384,
+    "disk": 1024,
+    "mem": 128
+  },
+  "services": [],
+  "droplet": "#{app.guid}",
+  "name": "hello-sinatra",
+  "uris": "myapp.com",
+  "prod": false,
+  "sha1": "9c8f36ee81b535a7d9b4efcd9d629e8cf8a2645f",
+  "executableFile": "deprecated",
+  "executableUri": "https://a1-cf-app-com-cc-droplets.s3.amazonaws.com/ac/cf/accf1078-e7e1-439a-bd32-77296390c406?AWSAccessKeyId=AKIAIMGCF7E5F6M5RV3A&Signature=1lyIotK3cZ2VUyK3H8YrlT82B8c%3D&Expires=1369259081",
+  "version": "ce1da6af-59b1-4fea-9e39-64c19440a671"
+}
+PAYLOAD
+
+      it "prints the uris, host, and port" do
+        cf %W[watch]
+
+        expect(output).to say("app: myapp, dea: 42, index: 2, uris: myapp.com")
+      end
+    end
   end
 
   context "when a message is seen with subject droplet.updated" do

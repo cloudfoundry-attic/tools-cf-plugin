@@ -594,6 +594,21 @@ PAYLOAD
       expect(output).to say("app: myapp, querying states: starting, running")
     end
 
+    context "when there are no states being queried" do
+      let(:payload) { <<PAYLOAD }
+{
+  "version": "878318bf-64a0-4055-b79b-46871292ceb8",
+  "droplet": "#{app.guid}"
+}
+PAYLOAD
+
+      it "prints them as 'none'" do
+        cf %W[watch]
+
+        expect(output).to say("app: myapp, querying states: none")
+      end
+    end
+
     context "and we see the response" do
       let(:messages) do
         [ [payload, "some-inbox", "dea.find.droplet"],

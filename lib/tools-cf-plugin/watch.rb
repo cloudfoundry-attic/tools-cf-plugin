@@ -174,7 +174,6 @@ module CFTools
     end
 
     def pretty_heartbeat(sub, payload, app)
-
       dea, _ = payload["dea"].split("-", 2)
 
       states = Hash.new(0)
@@ -261,10 +260,13 @@ module CFTools
     end
 
     def pretty_find_droplet(sub, payload)
-      states = payload["states"].collect { |s| c(s.downcase, state_color(s))}
+      states = (payload["states"] || []).collect do |s|
+        c(s.downcase, state_color(s))
+      end
+
       [ d(sub),
         [ "app: #{pretty_app(payload["droplet"])}",
-          "querying states: #{states.join(", ")}"
+          "querying states: #{list(states)}"
         ].join(", ")
       ]
     end
@@ -419,12 +421,14 @@ module CFTools
         end
 
       if existing_app
-        #@seen_apps[guid] = existing_app
+        @seen_apps[guid] = existing_app
         c(existing_app.name, :name)
       else
         @seen_apps[guid] = nil
         d("unknown (#{guid})")
       end
+    rescue CFoundry::InvalidAuthToken
+      guid
     end
 
     def watching_nats(uri, &blk)

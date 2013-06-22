@@ -3,9 +3,7 @@ require "nats/client"
 
 module CFTools
   class Watch < CF::App::Base
-    def precondition
-      check_target
-    end
+    def precondition; end
 
     REPLY_PREFIX = "`- reply to "
     COLUMN_WIDTH = 30
@@ -412,6 +410,8 @@ module CFTools
     end
 
     def pretty_app(guid)
+      return guid unless client
+
       existing_app =
         if @seen_apps.key?(guid)
           @seen_apps[guid]
@@ -427,7 +427,7 @@ module CFTools
         @seen_apps[guid] = nil
         d("unknown (#{guid})")
       end
-    rescue CFoundry::InvalidAuthToken
+    rescue CFoundry::TargetRefused, CFoundry::InvalidAuthToken
       guid
     end
 

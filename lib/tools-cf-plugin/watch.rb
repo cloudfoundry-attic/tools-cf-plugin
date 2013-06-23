@@ -79,7 +79,6 @@ module CFTools
       when "router.start"
         sub, payload = pretty_router_start(sub, payload)
       when "router.register"
-        return if !app && payload.has_key?("dea")
         sub, payload = pretty_register(sub, payload)
       when "router.unregister"
         sub, payload = pretty_unregister(sub, payload)

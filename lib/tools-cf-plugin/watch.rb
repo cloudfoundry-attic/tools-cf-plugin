@@ -166,7 +166,8 @@ module CFTools
       [ c(sub, :bad),
         [ "app: #{pretty_app(payload["droplet"])}",
           "reason: #{payload["reason"]}",
-          "index: #{payload["index"]}"
+          "index: #{payload["index"]}",
+          "version: #{pretty_version(payload["version"])}"
         ].join(", ")
       ]
     end
@@ -230,6 +231,7 @@ module CFTools
         [ "app: #{pretty_app(payload["droplet"])}",
           "dea: #{dea}",
           "index: #{payload["index"]}",
+          "version: #{pretty_version(payload["version"])}",
           "uris: #{list(Array(payload["uris"]))}"
         ].join(", ")
       ]
@@ -237,6 +239,10 @@ module CFTools
 
     def pretty_stop(sub, payload)
       message = ["app: #{pretty_app(payload["droplet"])}"]
+
+      if (version = payload["version"])
+        message << "version: #{pretty_version(version)}"
+      end
 
       if (indices = payload["indices"])
         message << "scaling down indices: #{indices.join(", ")}"
@@ -264,6 +270,7 @@ module CFTools
 
       [ d(sub),
         [ "app: #{pretty_app(payload["droplet"])}",
+          "version: #{pretty_version(payload["version"])}",
           "querying states: #{list(states)}"
         ].join(", ")
       ]
@@ -273,20 +280,25 @@ module CFTools
       dea, _ = payload["dea"].split("-", 2)
       index = payload["index"]
       state = payload["state"]
-      time = Time.at(payload["state_timestamp"])
+      version = payload["version"]
+      since = Time.at(payload["state_timestamp"])
       [ sub,
         [ "dea: #{dea}",
           "index: #{index}",
           "state: #{c(state.downcase, state_color(state))}",
-          "since: #{time}"
+          "version: #{pretty_version(version)}",
+          "since: #{since}"
         ].join(", ")
       ]
     end
 
     def pretty_healthmanager_status(sub, payload)
       state = payload["state"]
+      version = payload["version"]
+
       [ d(sub),
         [ "app: #{pretty_app(payload["droplet"])}",
+          "version: #{pretty_version(version)}",
           "querying states: #{c(state.downcase, state_color(state))}"
         ].join(", ")
       ]
@@ -297,13 +309,17 @@ module CFTools
     end
 
     def pretty_healthmanager_health(sub, payload)
-      apps = payload["droplets"].collect { |d| pretty_app(d["droplet"]) }
+      apps = payload["droplets"].collect do |d|
+        "#{pretty_app(d["droplet"])} (#{pretty_version(d["version"])})"
+      end
+
       [d(sub), "querying health for: #{list(apps)}"]
     end
 
     def pretty_healthmanager_health_response(sub, payload)
       [ sub,
         [ "app: #{pretty_app(payload["droplet"])}",
+          "version: #{pretty_version(payload["version"])}",
           "healthy: #{payload["healthy"]}"
         ].join(", ")
       ]
@@ -333,6 +349,10 @@ module CFTools
         "operation: #{pretty_hm_op(op)}",
         "app last updated: #{last_updated}"
       ]
+
+      if (version = payload["version"])
+        message << "version: #{pretty_version(version)}"
+      end
 
       case op
       when "STOP"
@@ -407,6 +427,10 @@ module CFTools
       else
         op
       end
+    end
+
+    def pretty_version(guid)
+      guid.split("-").first
     end
 
     def pretty_app(guid)

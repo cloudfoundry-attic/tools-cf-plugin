@@ -146,7 +146,7 @@ PAYLOAD
     it "pretty-prints the message body" do
       cf %W[watch]
 
-      expect(output).to say("app: myapp, reason: STOPPED, index: 0")
+      expect(output).to say("app: myapp, reason: STOPPED, index: 0, version: aaca113b")
     end
   end
 
@@ -172,7 +172,7 @@ PAYLOAD
       "state": "CRASHED",
       "index": 1,
       "instance": "some other app instance",
-      "version": "5c0e0e10-8384-4a35-915e-872fe91ffb95",
+      "version": "deadbeef-8384-4a35-915e-872fe91ffb95",
       "droplet": "#{app.guid}",
       "cc_partition": "default"
     },
@@ -453,10 +453,10 @@ PAYLOAD
       expect(output).to say("dea.42.start")
     end
 
-    it "prints the uris, host, and port" do
+    it "prints the app, dea, index, version, and uris" do
       cf %W[watch]
 
-      expect(output).to say("app: myapp, dea: 42, index: 2, uris: myapp.com")
+      expect(output).to say("app: myapp, dea: 42, index: 2, version: ce1da6af, uris: myapp.com")
     end
 
     context "when a single uri is given as a string" do
@@ -484,10 +484,10 @@ PAYLOAD
 }
 PAYLOAD
 
-      it "prints the uris, host, and port" do
+      it "prints the app, dea, index, version, and uris" do
         cf %W[watch]
 
-        expect(output).to say("app: myapp, dea: 42, index: 2, uris: myapp.com")
+        expect(output).to say("app: myapp, dea: 42, index: 2, version: ce1da6af, uris: myapp.com")
       end
     end
   end
@@ -529,7 +529,7 @@ PAYLOAD
       it "prints that it's scaling down, and the affected indices" do
         cf %W[watch]
 
-        expect(output).to say("app: myapp, scaling down indices: 1, 2")
+        expect(output).to say("app: myapp, version: ce1da6af, scaling down indices: 1, 2")
       end
     end
 
@@ -611,7 +611,7 @@ PAYLOAD
   ],
   "dea": "1-c0d2928b36c524153cdc8cfb51d80f75",
   "droplet": "#{app.guid}",
-  "version": "c75b3e45-0cf4-403d-a54d-1c0970dca50d",
+  "version": "878318bf-0cf4-403d-a54d-1c0970dca50d",
   "instance": "7cc4f4fe64c7a0fbfaacf71e9e222a35",
   "index": 0,
   "state": "RUNNING",
@@ -623,7 +623,7 @@ PAYLOAD
     it "prints the states being queried" do
       cf %W[watch]
 
-      expect(output).to say("app: myapp, querying states: starting, running")
+      expect(output).to say("app: myapp, version: 878318bf, querying states: starting, running")
     end
 
     context "when there are no states being queried" do
@@ -637,7 +637,7 @@ PAYLOAD
       it "prints them as 'none'" do
         cf %W[watch]
 
-        expect(output).to say("app: myapp, querying states: none")
+        expect(output).to say("app: myapp, version: 878318bf, querying states: none")
       end
     end
 
@@ -651,7 +651,7 @@ PAYLOAD
       it "pretty-prints the response" do
         cf %W[watch]
 
-        expect(output).to say("reply to dea.find.droplet (1)\tdea: 1, index: 0, state: running, since: 2013-05-22 15:45:04 -0700")
+        expect(output).to say("reply to dea.find.droplet (1)\tdea: 1, index: 0, state: running, version: 878318bf, since: 2013-05-22 15:45:04 -0700")
       end
     end
   end
@@ -679,7 +679,7 @@ PAYLOAD
     it "prints the states being queried" do
       cf %W[watch]
 
-      expect(output).to say("app: myapp, querying states: flapping")
+      expect(output).to say("app: myapp, version: 50512eed, querying states: flapping")
     end
 
     context "and we see the response" do
@@ -708,11 +708,11 @@ PAYLOAD
 {
   "droplets": [
     {
-      "version": "some-version",
+      "version": "deadbeef-foo",
       "droplet": "#{app.guid}"
     },
     {
-      "version": "some-other-version",
+      "version": "beefdead-foo",
       "droplet": "#{other_app.guid}"
     }
   ]
@@ -722,7 +722,7 @@ PAYLOAD
     let(:response_payload) { <<PAYLOAD }
 {
   "healthy": 2,
-  "version": "some-version",
+  "version": "deadbeef-foo",
   "droplet": "#{app.guid}"
 }
 PAYLOAD
@@ -730,7 +730,7 @@ PAYLOAD
     let(:other_response_payload) { <<PAYLOAD }
 {
   "healthy": 3,
-  "version": "some-version",
+  "version": "beefdead-foo",
   "droplet": "#{other_app.guid}"
 }
 PAYLOAD
@@ -740,7 +740,7 @@ PAYLOAD
     it "prints the apps whose health being queried" do
       cf %W[watch]
 
-      expect(output).to say("querying health for: myapp, otherapp")
+      expect(output).to say("querying health for: myapp (deadbeef), otherapp (beefdead)")
     end
 
     context "and we see the response" do
@@ -754,8 +754,8 @@ PAYLOAD
       it "pretty-prints the response" do
         cf %W[watch]
 
-        expect(output).to say("reply to healthmanager.health (1)\tapp: myapp, healthy: 2")
-        expect(output).to say("reply to healthmanager.health (1)\tapp: otherapp, healthy: 3")
+        expect(output).to say("reply to healthmanager.health (1)\tapp: myapp, version: deadbeef, healthy: 2")
+        expect(output).to say("reply to healthmanager.health (1)\tapp: otherapp, version: beefdead, healthy: 3")
       end
     end
   end
@@ -846,7 +846,7 @@ PAYLOAD
     1,
     3
   ],
-  "version": "some-version",
+  "version": "deadbeef-foo",
   "last_updated": #{last_updated.to_i},
   "op": "START",
   "droplet": "#{app.guid}"
@@ -857,7 +857,7 @@ PAYLOAD
         cf %W[watch]
 
         expect(output).to say(
-          "app: myapp, operation: start, app last updated: #{last_updated}, indices: 1, 3")
+          "app: myapp, operation: start, app last updated: #{last_updated}, version: deadbeef, indices: 1, 3")
       end
     end
   end

@@ -600,6 +600,8 @@ PAYLOAD
 }
 PAYLOAD
 
+    let(:state_timestamp) { "1369262704.3337305" }
+
     let(:response_payload) { <<PAYLOAD }
 {
   "console_port": 61016,
@@ -615,7 +617,7 @@ PAYLOAD
   "instance": "7cc4f4fe64c7a0fbfaacf71e9e222a35",
   "index": 0,
   "state": "RUNNING",
-  "state_timestamp": 1369262704.3337305,
+  "state_timestamp": #{state_timestamp},
   "file_uri": "http://10.10.17.1:12345/instances"
 }
 PAYLOAD
@@ -651,7 +653,7 @@ PAYLOAD
       it "pretty-prints the response" do
         cf %W[watch]
 
-        expect(output).to say("reply to dea.find.droplet (1)\tdea: 1, index: 0, state: running, version: 878318bf, since: 2013-05-22 15:45:04 -0700")
+        expect(output).to say("reply to dea.find.droplet (1)\tdea: 1, index: 0, state: running, version: 878318bf, since: #{Time.at(state_timestamp.to_f)}")
       end
     end
   end

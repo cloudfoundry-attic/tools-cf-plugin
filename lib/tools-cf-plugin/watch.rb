@@ -10,7 +10,7 @@ module CFTools
 
     desc "Watch messages going over NATS relevant to an application"
     group :admin
-    input :app, :argument => :optional, :from_given => by_name(:app),
+    input :app, :argument => :optional, :from_given => by_name(:apps),
           :desc => "Application to watch"
     input :host, :alias => "-h", :default => "127.0.0.1",
           :desc => "NATS server address"
@@ -21,7 +21,7 @@ module CFTools
     input :password, :alias => "-p", :default => "nats",
           :desc => "NATS server password"
     def watch
-      app = input[:app]
+      app = get_app(input[:app])
       host = input[:host]
       port = input[:port]
       user = input[:user]
@@ -462,6 +462,25 @@ module CFTools
 
     def register_request(sub, reply)
       @requests[reply] = [sub, @request_ticker += 1]
+    end
+
+    def get_app(apps)
+      return unless apps
+
+      if apps.empty?
+        fail "Unknown app '#{input.given[:app]}'."
+      elsif apps.size == 1
+        apps.first
+      else
+        disambiguate_app(apps)
+      end
+    end
+
+    def disambiguate_app(apps)
+      ask("Which application?", :choices => apps,
+          :display => proc do |a|
+            "#{a.name} (#{a.space.organization.name}/#{a.space.name})"
+          end)
     end
   end
 end

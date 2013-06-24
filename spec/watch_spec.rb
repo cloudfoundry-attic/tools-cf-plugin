@@ -104,6 +104,25 @@ describe CFTools::Watch do
       end
     end
 
+    context "and multiple apps with the sane name are found" do
+      let!(:org1) { fake :organization, :name => "org1" }
+      let!(:org2) { fake :organization, :name => "org2" }
+      let!(:space1) { fake :space, :name => "space1", :organization => org1 }
+      let!(:space2) { fake :space, :name => "space2", :organization => org2 }
+      let!(:app1) { fake :app, :name => "myapp", :guid => "myappguid", :space => space1 }
+      let!(:app2) { fake :app, :name => "myapp", :guid => "myappguid", :space => space2 }
+
+      let(:client) { fake_client :apps => [app1, app2] }
+
+      it "asks to disambiguate" do
+        should_ask("Which application?", hash_including(:choices => [app1, app2])) do |_, opts|
+          expect(opts[:display].call(app1)).to eq("myapp (org1/space1)")
+        end
+
+        cf %W[watch myapp]
+      end
+    end
+
     context "and a message containing the app's GUID is seen" do
       around { |example| Timecop.freeze(&example) }
 

@@ -63,7 +63,7 @@ module CFTools
     def process_message(sub, reply, msg, app)
       register_request(sub, reply) if reply
 
-      payload = JSON.parse(msg) # rescue msg
+      payload = JSON.parse(msg) rescue msg
 
       case sub
       when "dea.advertise"

@@ -828,58 +828,60 @@ PAYLOAD
     end
   end
 
-  context "when a message is seen with subject cloudcontrollers.hm.requests.*" do
-    let(:subject) { "cloudcontrollers.hm.requests.default" }
+  context "when a message is seen with subject health.start" do
+    let(:subject) { "health.start" }
 
     let(:last_updated) { Time.now }
 
-    context "and it is a STOP operation" do
-      let(:payload) { <<PAYLOAD }
-{
-  "instances": [
-    "some-instance",
-    "some-other-instance"
-  ],
-  "last_updated": #{last_updated.to_i},
-  "op": "STOP",
-  "droplet": "#{app.guid}"
-}
-PAYLOAD
-
-      it "trims the subject" do
-        cf %W[watch]
-
-        expect(output).to say(/\s+hm\.request\s+/)
-      end
-
-      it "prints the operation, last updated timestamp, and instances" do
-        cf %W[watch]
-
-        expect(output).to say(
-          "app: myapp, operation: stop, app last updated: #{last_updated}, instances: some-instance, some-other-instance")
-      end
-    end
-
-    context "and it is a START operation" do
-      let(:payload) { <<PAYLOAD }
+    let(:payload) { <<PAYLOAD }
 {
   "indices": [
     1,
     3
   ],
+  "running": {
+    "deadbeef-version": 1,
+    "beefdead-version": 2
+  },
   "version": "deadbeef-foo",
   "last_updated": #{last_updated.to_i},
-  "op": "START",
   "droplet": "#{app.guid}"
 }
 PAYLOAD
 
-      it "prints the operation, last updated timestamp, and instances" do
-        cf %W[watch]
+    it "prints the operation, last updated timestamp, and instances" do
+      cf %W[watch]
 
-        expect(output).to say(
-          "app: myapp, operation: start, app last updated: #{last_updated}, version: deadbeef, indices: 1, 3")
-      end
+      expect(output).to say(
+        "app: myapp, version: deadbeef, indices: 1, 3, running: 1 x deadbeef, 2 x beefdead")
+    end
+  end
+
+  context "when a message is seen with subject health.stop" do
+    let(:subject) { "health.stop" }
+
+    let(:last_updated) { Time.now }
+
+    let(:payload) { <<PAYLOAD }
+{
+  "instances": {
+    "some-instance": "deadbeef-version",
+    "some-other-instance": "beefdead-version"
+  },
+  "running": {
+    "deadbeef-version": 1,
+    "beefdead-version": 2
+  },
+  "last_updated": #{last_updated.to_i},
+  "droplet": "#{app.guid}"
+}
+PAYLOAD
+
+    it "prints the operation, last updated timestamp, and instances" do
+      cf %W[watch]
+
+      expect(output).to say(
+        "app: myapp, instances: some-instance (deadbeef), some-other-instance (beefdead), running: 1 x deadbeef, 2 x beefdead")
     end
   end
 

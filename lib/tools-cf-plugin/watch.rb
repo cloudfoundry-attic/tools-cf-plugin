@@ -98,8 +98,10 @@ module CFTools
         sub, payload = pretty_healthmanager_health(sub, payload)
       when "dea.shutdown"
         sub, payload = pretty_dea_shutdown(sub, payload)
-      when /^cloudcontrollers\.hm\.requests\.\w+$/
-        sub, payload = process_cloudcontrollers_hm_request(payload)
+      when "health.start"
+        sub, payload = pretty_health_start(sub, payload)
+      when "health.stop"
+        sub, payload = pretty_health_stop(sub, payload)
       when /^([^.]+)\.announce$/
         sub, payload = pretty_service_announcement(sub, payload)
       when "vcap.component.announce"
@@ -338,29 +340,23 @@ module CFTools
       [c(sub, :error), "dea: #{dea}, apps: #{list(apps)}"]
     end
 
-    def process_cloudcontrollers_hm_request(payload)
-      last_updated = Time.at(payload["last_updated"])
-
-      op = payload["op"]
-
-      message = [
-        "app: #{pretty_app(payload["droplet"])}",
-        "operation: #{pretty_hm_op(op)}",
-        "app last updated: #{last_updated}"
+    def pretty_health_start(sub, payload)
+      [ c(sub, :good),
+        [ "app: #{pretty_app(payload["droplet"])}",
+          "version: #{pretty_version(payload["version"])}",
+          "indices: #{list(payload["indices"])}",
+          "running: #{pretty_running_counts(payload["running"])}"
+        ].join(", ")
       ]
+    end
 
-      if (version = payload["version"])
-        message << "version: #{pretty_version(version)}"
-      end
-
-      case op
-      when "STOP"
-        message << "instances: #{list(payload["instances"])}"
-      when "START"
-        message << "indices: #{list(payload["indices"])}"
-      end
-
-      [c("hm.request", :warning), message.join(", ")]
+    def pretty_health_stop(sub, payload)
+      [ c(sub, :bad),
+        [ "app: #{pretty_app(payload["droplet"])}",
+          "instances: #{pretty_instance_breakdown(payload["instances"])}",
+          "running: #{pretty_running_counts(payload["running"])}"
+        ].join(", ")
+      ]
     end
 
     def pretty_service_announcement(sub, payload)
@@ -417,15 +413,16 @@ module CFTools
       [d(sub), message.join(", ")]
     end
 
-    def pretty_hm_op(op)
-      case op
-      when "STOP"
-        c("stop", :bad)
-      when "START"
-        c("start", :good)
-      else
-        op
-      end
+    def pretty_running_counts(running)
+      running.collect do |ver, num|
+        "#{num} x #{pretty_version(ver)}"
+      end.join(", ")
+    end
+
+    def pretty_instance_breakdown(instances)
+      instances.collect do |inst, ver|
+        "#{inst} (#{pretty_version(ver)})"
+      end.join(", ")
     end
 
     def pretty_version(guid)

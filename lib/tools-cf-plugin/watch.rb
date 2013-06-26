@@ -12,6 +12,9 @@ module CFTools
     group :admin
     input :app, :argument => :optional, :from_given => by_name(:apps),
           :desc => "Application to watch"
+    input :subjects, :aliases => %w[-s --subject],
+          :from_given => proc { |s| s.split(",") },
+          :desc => "NATS subject to subscribe to"
     input :host, :alias => "-h", :default => "127.0.0.1",
           :desc => "NATS server address"
     input :port, :alias => "-P", :default => 4222, :type => :integer,
@@ -26,6 +29,7 @@ module CFTools
       port = input[:port]
       user = input[:user]
       pass = input[:password]
+      subjects = input[:subjects] || [">"]
 
       @requests = {}
       @seen_apps = {}
@@ -33,7 +37,7 @@ module CFTools
 
       $stdout.sync = true
 
-      watching_nats("nats://#{user}:#{pass}@#{host}:#{port}") do |msg, reply, sub|
+      watching_nats("nats://#{user}:#{pass}@#{host}:#{port}", subjects) do |msg, reply, sub|
         begin
           if @requests.include?(sub)
             process_response(sub, reply, msg, app)
@@ -451,9 +455,11 @@ module CFTools
       guid
     end
 
-    def watching_nats(uri, &blk)
+    def watching_nats(uri, subjects, &blk)
       NATS.start(:uri => uri) do
-        NATS.subscribe(">", &blk)
+        subjects.each do |subject|
+          NATS.subscribe(subject, &blk)
+        end
       end
     end
 

@@ -33,6 +33,21 @@ describe CFTools::Watch do
     cf %W[watch]
   end
 
+  context "when a subject is given" do
+    it "subscribes to the given subject on NATS" do
+      expect(NATS).to receive(:subscribe).with("some.subject")
+      cf %W[watch --subject some.subject]
+    end
+
+    context "when multiple subjects are given" do
+      it "subscribes to all of them on NATS" do
+        expect(NATS).to receive(:subscribe).with("some.subject")
+        expect(NATS).to receive(:subscribe).with("some.other.subject")
+        cf %W[watch --subjects some.subject,some.other.subject]
+      end
+    end
+  end
+
   context "when no application is given" do
     around { |example| Timecop.freeze(&example) }
 

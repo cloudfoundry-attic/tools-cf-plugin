@@ -90,7 +90,8 @@ describe CFTools::Watch do
     it "prints the date/time from the source file, in local time" do
       cf %W[watch -l #{fixture("nats_logs")}/1]
       gmt = Time.parse("2013-07-04_18:00:36.99086 GMT")
-      expect(output).to say(/^2013-07-04 11:00:36 AM/)
+      local = gmt.strftime("%Y-%m-%d %r")
+      expect(output).to say(/^#{local}/)
     end
 
     context "and a subject is given" do

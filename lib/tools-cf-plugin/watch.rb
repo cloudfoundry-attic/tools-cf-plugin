@@ -1,3 +1,5 @@
+require "time"
+
 require "cf/cli"
 require "nats/client"
 
@@ -23,6 +25,7 @@ module CFTools
           :desc => "NATS server user"
     input :password, :alias => "-p", :default => "nats",
           :desc => "NATS server password"
+    input :logs, :alias => "-l", :desc => "NATS server logs to replay"
     def watch
       app = get_app(input[:app])
       host = input[:host]
@@ -37,12 +40,17 @@ module CFTools
 
       $stdout.sync = true
 
-      watching_nats("nats://#{user}:#{pass}@#{host}:#{port}", subjects) do |msg, reply, sub|
+      watching_nats(
+          :uri => "nats://#{user}:#{pass}@#{host}:#{port}",
+          :logs => input[:logs],
+          :subjects => subjects) do |msg, reply, sub, time|
         begin
+          time ||= Time.now.strftime("%r")
+
           if @requests.include?(sub)
-            process_response(sub, reply, msg, app)
+            process_response(sub, reply, msg, app, time)
           elsif !app || msg.include?(app.guid)
-            process_message(sub, reply, msg, app)
+            process_message(sub, reply, msg, app, time)
           end
         rescue => e
           line c("couldn't deal w/ #{sub} '#{msg}': #{e.class}: #{e}", :error)
@@ -52,10 +60,6 @@ module CFTools
 
     private
 
-    def timestamp
-      Time.now.strftime("%r")
-    end
-
     def list(vals)
       if vals.empty?
         d("none")
@@ -64,7 +68,7 @@ module CFTools
       end
     end
 
-    def process_message(sub, reply, msg, app)
+    def process_message(sub, reply, msg, app, time)
       register_request(sub, reply) if reply
 
       payload = JSON.parse(msg) rescue msg
@@ -120,10 +124,10 @@ module CFTools
       end
 
       sub = sub.ljust(COLUMN_WIDTH)
-      line "#{timestamp}\t#{sub}\t#{payload}"
+      line "#{time}\t#{sub}\t#{payload}"
     end
 
-    def process_response(sub, _, msg, _)
+    def process_response(sub, _, msg, _, time)
       payload = JSON.parse(msg) # rescue msg
 
       sub, id = @requests[sub]
@@ -139,7 +143,7 @@ module CFTools
         sub, payload = pretty_component_discover_response(sub, payload)
       end
 
-      line "#{timestamp}\t#{REPLY_PREFIX}#{sub} (#{c(id, :error)})\t#{payload}"
+      line "#{time}\t#{REPLY_PREFIX}#{sub} (#{c(id, :error)})\t#{payload}"
     end
 
     def pretty_dea_advertise(sub, payload)
@@ -455,12 +459,53 @@ module CFTools
       guid
     end
 
-    def watching_nats(uri, subjects, &blk)
-      NATS.start(:uri => uri) do
-        subjects.each do |subject|
-          NATS.subscribe(subject, &blk)
+    def watching_nats(options, &blk)
+      if options[:logs]
+        logs = Dir[File.expand_path(options[:logs])]
+
+        logs.each do |log|
+          File.open(log) do |io|
+            io.each do |line|
+              dispatch_line(line, options[:subjects], &blk)
+            end
+          end
+        end
+      else
+        NATS.start(:uri => options[:uri]) do
+          options[:subjects].each do |subject|
+            NATS.subscribe(subject, &blk)
+          end
         end
       end
+    end
+
+    def dispatch_line(line, subjects)
+      matches = line.match(/^([^ ]+) \[#\d+\] Received on \[([^\]]+)\] : '(.*)'$/)
+      timestamp = matches[1]
+      subject = matches[2]
+      message = matches[3]
+
+      return unless subjects.any? { |p| subject_matches?(subject, p) }
+
+      gmt = Time.parse("#{timestamp} GMT")
+      yield message, nil, subject, gmt.strftime("%Y-%m-%d %r")
+    end
+
+    def subject_matches?(subject, pattern)
+      ssegs = subject.split(".")
+      psegs = pattern.split(".")
+
+      # match sizes because zip is silly
+      ssegs[psegs.size - 1] ||= nil
+
+      ssegs.zip(psegs) do |a, b|
+        break if b == ">"
+        return false if a == nil
+        next if b == "*"
+        return false if a != b
+      end
+
+      true
     end
 
     def register_request(sub, reply)

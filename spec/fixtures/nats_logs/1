@@ -1,0 +1,4 @@
+2013-07-04_18:00:36.99086 [#12294219] Received on [health.stop] : '{"droplet":"some-app-guid","last_updated":1372959488,"instances":{"bd56b936c9ba8e69b4c3f0b8a4dab1cb":"1837d4f7-2e02-4f4e-98a4-e1bd4b016194"},"running":{"c1820a4c-846a-4581-9be3-a7488829c138":16,"1837d4f7-2e02-4f4e-98a4-e1bd4b016194":0,"7a99dd4d-c525-4fdc-a18d-1f9919a765d0":0},"version":"c1820a4c-846a-4581-9be3-a7488829c138"}'
+2013-07-04_18:00:36.99088 [#12294220] Received on [dea.stop] : '{"droplet":"some-app-guid","instances":["bd56b936c9ba8e69b4c3f0b8a4dab1cb"]}'
+2013-07-04_19:00:36.99088 [#12294220] Received on [foo.bar] : 'sup'
+2013-07-04_19:00:39.99088 [#12294220] Received on [foo] : 'sup'

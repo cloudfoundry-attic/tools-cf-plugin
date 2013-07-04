@@ -12,6 +12,10 @@ require "nats/client"
 
 require "#{SPEC_ROOT}/../lib/tools-cf-plugin/plugin"
 
+def fixture(path)
+  "#{SPEC_ROOT}/fixtures/#{path}"
+end
+
 RSpec.configure do |c|
   c.include Fake::FakeMethods
 

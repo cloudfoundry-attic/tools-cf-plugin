@@ -78,6 +78,56 @@ describe CFTools::Watch do
     end
   end
 
+  context "when NATS message logs are given" do
+    let(:app) { fake :app, :guid => "some-app-guid" }
+    let(:client) { fake_client :apps => [app] }
+
+    it "does not connect to NATS" do
+      expect(NATS).to_not receive(:start)
+      cf %W[watch -l #{fixture("nats_logs")}/1]
+    end
+
+    it "prints the date/time from the source file, in local time" do
+      cf %W[watch -l #{fixture("nats_logs")}/1]
+      gmt = Time.parse("2013-07-04_18:00:36.99086 GMT")
+      expect(output).to say(/^2013-07-04 11:00:36 AM/)
+    end
+
+    context "and a subject is given" do
+      it "only prints matching entries" do
+        cf %W[watch -s dea.stop -l #{fixture("nats_logs")}/1]
+        expect(output).to_not say("health.stop")
+        expect(output).to say("dea.stop")
+      end
+
+      context "and it uses *" do
+        it "only prints matching entries" do
+          cf %W[watch -s *.stop -l #{fixture("nats_logs")}/1]
+          expect(output).to say("health.stop")
+          expect(output).to say("dea.stop")
+          expect(output).to_not say("foo.bar")
+        end
+
+        it "matches based on segment length" do
+          cf %W[watch -s * -l #{fixture("nats_logs")}/1]
+          expect(output).to_not say("health.stop")
+          expect(output).to_not say("dea.stop")
+          expect(output).to_not say("foo.bar")
+          expect(output).to say("foo")
+        end
+      end
+
+      context "and it uses >" do
+        it "only prints matching entries" do
+          cf %W[watch -s foo.> -l #{fixture("nats_logs")}/1]
+          expect(output).to_not say("health.stop")
+          expect(output).to_not say("dea.stop")
+          expect(output).to say("foo.bar")
+        end
+      end
+    end
+  end
+
   context "when a malformed message comes in" do
     let(:messages) { [["foo", nil, "some.subject"]] }
 

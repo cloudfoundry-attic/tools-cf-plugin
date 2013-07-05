@@ -14,6 +14,11 @@ module CFTools::Tunnel
       "router" => ["gorouter/gorouter.log"]
     }
 
+    # colorize if told to; don't check if output is tty
+    def color?
+      input[:color]
+    end
+
     desc "Stream logs from the jobs of a deployment"
     input :director, :argument => :required, :desc => "BOSH director address"
     input :components, :argument => :splat, :desc => "Which components to log"

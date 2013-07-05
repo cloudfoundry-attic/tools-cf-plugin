@@ -3,6 +3,8 @@ require "time"
 
 module CFTools
   class SpaceTime < CF::CLI
+    def precondition; end
+
     def self.io_from_input
       proc do |name|
         if name == "-"

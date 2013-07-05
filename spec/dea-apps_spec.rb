@@ -8,11 +8,11 @@ describe CFTools::DEAApps do
 
   before { stub_client }
 
-  before {
+  before do
     app1.stub(:exists? => true)
     app2.stub(:exists? => true)
     app3.stub(:exists? => true)
-  }
+  end
 
   before do
     NATS.stub(:start).and_yield
@@ -20,8 +20,7 @@ describe CFTools::DEAApps do
     EM.stub(:add_periodic_timer).and_yield
   end
 
-  context "When a NATS message is recieved" do
-    let(:advertise) { <<PAYLOAD }
+  let(:advertise) { <<PAYLOAD }
 {
   "app_id_to_count": {
     "#{app1.guid}": #{app1.total_instances},
@@ -38,17 +37,35 @@ describe CFTools::DEAApps do
 }
 PAYLOAD
 
-    before do
-      NATS.stub(:subscribe).and_yield(advertise)
-    end
-
-    it "outputs the list of apps, memory and math" do
-      cf %W[dea-apps]
-      expect(output).to say(%r{app_name\s+app_guid\s+org/space\s+reserved\s+math})
-      expect(output).to say(%r{myapp3\s+myappguid-3\s+organization-\w+ / space-\w+\s+4G\s+\(1G\s+x\s+4\)})
-      expect(output).to say(%r{myapp2\s+myappguid-2\s+organization-\w+ / space-\w+\s+1G\s+\(256M\s+x\s+4\)})
-      expect(output).to say(%r{myapp1\s+myappguid-1\s+organization-\w+ / space-\w+\s+512M\s+\(128M\s+x\s+4\)})
-    end
+  before do
+    NATS.stub(:subscribe).and_yield(advertise)
   end
 
+  it "outputs the list of apps, memory and math" do
+    cf %W[dea-apps]
+    expect(output).to say(%r{app_name\s+app_guid\s+org/space\s+reserved\s+math})
+    expect(output).to say(%r{myapp3\s+myappguid-3\s+organization-\w+ / space-\w+\s+4G\s+\(1G\s+x\s+4\)})
+    expect(output).to say(%r{myapp2\s+myappguid-2\s+organization-\w+ / space-\w+\s+1G\s+\(256M\s+x\s+4\)})
+    expect(output).to say(%r{myapp1\s+myappguid-1\s+organization-\w+ / space-\w+\s+512M\s+\(128M\s+x\s+4\)})
+  end
+
+  context "when the server drops us for being a slow consumer" do
+    it "reconnects" do
+      expect(NATS).to receive(:subscribe).and_raise(
+        NATS::ServerError, "Slow consumer detected, connection dropped")
+
+      expect(NATS).to receive(:start).twice
+
+      cf %W[dea-apps]
+    end
+
+    it "says it's reconnecting" do
+      expect(NATS).to receive(:subscribe).and_raise(
+        NATS::ServerError, "Slow consumer detected, connection dropped")
+
+      cf %W[dea-apps]
+
+      expect(output).to say("reconnecting")
+    end
+  end
 end

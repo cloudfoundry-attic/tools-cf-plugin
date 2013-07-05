@@ -23,7 +23,11 @@ module CFTools
       user = input[:user]
       pass = input[:password]
 
-      NATS.start(:uri => "nats://#{user}:#{pass}@#{host}:#{port}") do
+      render_apps("nats://#{user}:#{pass}@#{host}:#{port}")
+    end
+
+    def render_apps(uri)
+      NATS.start(:uri => uri) do
         NATS.subscribe("dea.advertise") do |msg|
           payload = JSON.parse(msg)
           dea_id = payload["id"]
@@ -33,6 +37,11 @@ module CFTools
         EM.add_periodic_timer(3) do
           render_table
         end
+      end
+    rescue NATS::ServerError => e
+      if e.to_s =~ /slow consumer/i
+        line c("dropped by server; reconnecting...", :error)
+        retry
       end
     end
 

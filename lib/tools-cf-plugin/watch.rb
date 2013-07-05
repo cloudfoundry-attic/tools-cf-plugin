@@ -476,9 +476,16 @@ module CFTools
           end
         end
       else
-        NATS.start(:uri => options[:uri]) do
-          options[:subjects].each do |subject|
-            NATS.subscribe(subject, &blk)
+        begin
+          NATS.start(:uri => options[:uri]) do
+            options[:subjects].each do |subject|
+              NATS.subscribe(subject, &blk)
+            end
+          end
+        rescue NATS::ServerError => e
+          if e.to_s =~ /slow consumer/i
+            line c("dropped by server; reconnecting...", :error)
+            retry
           end
         end
       end

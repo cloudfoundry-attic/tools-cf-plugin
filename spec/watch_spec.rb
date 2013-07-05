@@ -78,6 +78,27 @@ describe CFTools::Watch do
     end
   end
 
+
+  context "when the server drops us for being a slow consumer" do
+    it "reconnects" do
+      expect(NATS).to receive(:subscribe).and_raise(
+        NATS::ServerError, "Slow consumer detected, connection dropped")
+
+      expect(NATS).to receive(:start).twice
+
+      cf %W[watch]
+    end
+
+    it "says it's reconnecting" do
+      expect(NATS).to receive(:subscribe).and_raise(
+        NATS::ServerError, "Slow consumer detected, connection dropped")
+
+      cf %W[watch]
+
+      expect(output).to say("reconnecting")
+    end
+  end
+
   context "when NATS message logs are given" do
     let(:app) { fake :app, :guid => "some-app-guid" }
     let(:client) { fake_client :apps => [app] }

@@ -46,7 +46,13 @@ module CFTools
       matches = entry.match(pattern)
       return unless matches
 
-      current_time = Time.parse(matches[1]) rescue return
+      current_time =
+        begin
+          Time.parse(matches[1])
+        rescue
+          line c("failed to parse: #{matches[1]}", :error)
+          return
+        end
 
       print_spacing(prev_time, current_time, scale)
 

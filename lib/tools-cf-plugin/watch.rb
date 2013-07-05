@@ -7,6 +7,11 @@ module CFTools
   class Watch < CF::App::Base
     def precondition; end
 
+    # colorize if told to; don't check if output is tty
+    def color?
+      input[:color]
+    end
+
     REPLY_PREFIX = "`- reply to "
     COLUMN_WIDTH = 30
 

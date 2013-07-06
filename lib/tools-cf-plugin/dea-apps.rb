@@ -15,18 +15,22 @@ module CFTools
           :desc => "NATS server user"
     input :password, :alias => "-p", :default => "nats",
           :desc => "NATS server password"
+    input :location, :alias => "-l", :default => false,
+          :desc => "Include application's location (org/space) in table"
     def dea_apps
-      @seen_apps = {}
-
       host = input[:host]
       port = input[:port]
       user = input[:user]
       pass = input[:password]
 
-      render_apps("nats://#{user}:#{pass}@#{host}:#{port}")
+      render_apps(
+        "nats://#{user}:#{pass}@#{host}:#{port}",
+        :include_location => input[:location])
     end
 
-    def render_apps(uri)
+    private
+
+    def render_apps(uri, options = {})
       NATS.start(:uri => uri) do
         NATS.subscribe("dea.advertise") do |msg|
           payload = JSON.parse(msg)
@@ -35,7 +39,7 @@ module CFTools
         end
 
         EM.add_periodic_timer(3) do
-          render_table
+          render_table(options)
         end
       end
     rescue NATS::ServerError => e
@@ -45,25 +49,29 @@ module CFTools
       end
     end
 
-    private
-
-    def client_app(guid)
-      existing_app =
-        if @seen_apps.key?(guid)
-          @seen_apps[guid]
-        else
-          app = client.app(guid, :depth => 2)
-          app if app.exists?
-        end
-
-      @seen_apps[guid] = existing_app
+    def seen_apps
+      @seen_apps ||= {}
     end
 
     def advertisements
       @advertisements ||= {}
     end
 
-    def render_table
+    def client_app(guid)
+      existing_app =
+        if seen_apps.key?(guid)
+          seen_apps[guid]
+        else
+          app = client.app(guid, :depth => 2)
+          app if app.exists?
+        end
+
+      seen_apps[guid] = existing_app
+    end
+
+    def render_table(options = {})
+      include_location = options[:include_location]
+
       app_counts = Hash.new(0)
       app_deas = Hash.new { |h, k| h[k] = [] }
 
@@ -74,6 +82,9 @@ module CFTools
         end
       end
 
+      columns = %w[dea app guid reserved math]
+      columns << "org/space" if include_location
+
       rows = app_counts.sort_by { |app_guid, count|
         app = client_app(app_guid)
         app ? app.memory * count : 0
@@ -82,28 +93,35 @@ module CFTools
 
         deas = list(app_deas[app_guid].collect(&:to_i).sort)
 
-        if app
-          [
-            "#{b(deas)}",
-            "#{c(app.name, :name)}",
-            "#{app.guid}",
-            "#{c(app.space.organization.name, :name)} / #{c(app.space.name, :name)}",
-            "#{human_mb(app.memory * count)}",
-            "(#{human_mb(app.memory)} x #{count})"
-          ]
-        else
-          [
-            "#{b(deas)}",
-            c("unknown", :warning),
-            "#{app_guid}",
-            "?",
-            "?",
-            "(? x #{count})"
-          ]
+        row =
+          if app
+            [
+              "#{b(deas)}",
+              "#{c(app.name, :name)}",
+              "#{app.guid}",
+              "#{human_mb(app.memory * count)}",
+              "(#{human_mb(app.memory)} x #{count})"
+            ]
+          else
+            [
+              "#{b(deas)}",
+              c("unknown", :warning),
+              "#{app_guid}",
+              "?",
+              "(? x #{count})"
+            ]
+          end
+
+        if include_location && app
+          row << "#{c(app.space.organization.name, :name)} / #{c(app.space.name, :name)}"
         end
+
+        row
       end
 
-      table(["dea", "app_name", "app_guid", "org/space", "reserved", "math"], rows)
+      table(
+        columns,
+        rows)
     end
 
     def human_mb(mem)

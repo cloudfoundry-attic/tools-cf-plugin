@@ -43,10 +43,20 @@ PAYLOAD
 
   it "outputs the list of apps, memory and math" do
     cf %W[dea-apps]
-    expect(output).to say(%r{app_name\s+app_guid\s+org/space\s+reserved\s+math})
-    expect(output).to say(%r{myapp3\s+myappguid-3\s+organization-\w+ / space-\w+\s+4G\s+\(1G\s+x\s+4\)})
-    expect(output).to say(%r{myapp2\s+myappguid-2\s+organization-\w+ / space-\w+\s+1G\s+\(256M\s+x\s+4\)})
-    expect(output).to say(%r{myapp1\s+myappguid-1\s+organization-\w+ / space-\w+\s+512M\s+\(128M\s+x\s+4\)})
+    expect(output).to say(%r{dea\s+app\s+guid\s+reserved\s+math})
+    expect(output).to say(%r{2\s+myapp3\s+myappguid-3\s+4G\s+\(1G\s+x\s+4\)})
+    expect(output).to say(%r{2\s+myapp2\s+myappguid-2\s+1G\s+\(256M\s+x\s+4\)})
+    expect(output).to say(%r{2\s+myapp1\s+myappguid-1\s+512M\s+\(128M\s+x\s+4\)})
+  end
+
+  context "when --location is provided" do
+    it "includes the org and space in the table" do
+      cf %W[dea-apps --location]
+      expect(output).to say(%r{dea\s+app\s+guid\s+reserved\s+math\s+org/space})
+      expect(output).to say(%r{2\s+myapp3\s+myappguid-3\s+4G\s+\(1G\s+x\s+4\)\s+organization-\w+ / space-\w+})
+      expect(output).to say(%r{2\s+myapp2\s+myappguid-2\s+1G\s+\(256M\s+x\s+4\)\s+organization-\w+ / space-\w+})
+      expect(output).to say(%r{2\s+myapp1\s+myappguid-1\s+512M\s+\(128M\s+x\s+4\)\s+organization-\w+ / space-\w+})
+    end
   end
 
   context "when the server drops us for being a slow consumer" do

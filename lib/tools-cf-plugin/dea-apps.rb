@@ -219,8 +219,12 @@ module CFTools
             width = text_width(col)
             spacings[i] = width if width > spacings[i]
 
-            print justify(col, spacings[i])
-            print "   " unless i + 1 == num_columns
+            if i + 1 == num_columns
+              print col
+            else
+              print justify(col, spacings[i])
+              print "   "
+            end
           end
 
           line

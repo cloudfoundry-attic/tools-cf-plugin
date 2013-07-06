@@ -5,7 +5,7 @@ module CFTools
   class DEAApps < CF::App::Base
     def precondition; end
 
-    desc "Show an overview of DEA advertisements over time."
+    desc "Show an overview of running applications."
     group :admin
     input :host, :alias => "-h", :default => "127.0.0.1",
           :desc => "NATS server address"
@@ -35,10 +35,10 @@ module CFTools
 
     def render_apps(uri, options = {})
       NATS.start(:uri => uri) do
-        NATS.subscribe("dea.advertise") do |msg|
+        NATS.subscribe("dea.heartbeat") do |msg|
           payload = JSON.parse(msg)
-          dea_id = payload["id"]
-          advertisements[dea_id] = payload["app_id_to_count"]
+          dea_id = payload["dea"]
+          register_heartbeat(dea_id, payload["droplets"])
         end
 
         EM.add_periodic_timer(3) do
@@ -49,6 +49,20 @@ module CFTools
       if e.to_s =~ /slow consumer/i
         line c("dropped by server; reconnecting...", :error)
         retry
+      else
+        lien c("server error: #{e}", :error)
+      end
+    end
+
+    def register_heartbeat(dea, droplets)
+      heartbeats[dea] ||= {}
+
+      droplets.each do |droplet|
+        if %w[RUNNING STARTING STOPPING].include?(droplet["state"])
+          heartbeats[dea][droplet["instance"]] = droplet
+        else
+          heartbeats[dea].delete(droplet["instance"])
+        end
       end
     end
 
@@ -56,8 +70,8 @@ module CFTools
       @seen_apps ||= {}
     end
 
-    def advertisements
-      @advertisements ||= {}
+    def heartbeats
+      @heartbeats ||= {}
     end
 
     def client_app(guid)
@@ -79,58 +93,68 @@ module CFTools
       app_counts = Hash.new(0)
       app_deas = Hash.new { |h, k| h[k] = [] }
 
-      advertisements.each do |dea_id, counts|
-        counts.each do |app_guid, count|
-          app_counts[app_guid] += count
+      heartbeats.each do |dea_id, droplets|
+        droplets.each_value do |droplet|
+          app_guid = droplet["droplet"]
+          app_counts[app_guid] += 1
           app_deas[app_guid] << dea_id
         end
       end
 
       columns = %w[dea app guid reserved math]
+
       columns << "stats" if include_stats
       columns << "org/space" if include_location
 
       rows = app_counts.sort_by { |app_guid, count|
-        app = client_app(app_guid)
-        app ? app.memory * count : 0
+        if seen_apps.key?(app_guid)
+          app = client_app(app_guid)
+          app ? app.memory * count : 0
+        else
+          0
+        end
       }.reverse.collect do |app_guid, count|
-        app = client_app(app_guid)
+        proc do
+          app = client_app(app_guid)
 
-        deas = list(app_deas[app_guid].collect(&:to_i).sort)
+          deas = list(app_deas[app_guid].collect(&:to_i).sort)
 
-        row =
-          if app
-            [
-              "#{b(deas)}",
-              "#{c(app.name, :name)}",
-              "#{app.guid}",
-              "#{human_mb(app.memory * count)}",
-              "(#{human_mb(app.memory)} x #{count})",
-            ]
-          else
-            [
-              "#{b(deas)}",
-              c("unknown", :warning),
-              "#{app_guid}",
-              "?",
-              "(? x #{count})",
-            ]
+          row =
+            if app
+              [
+                "#{b(deas)}",
+                "#{c(app.name, :name)}",
+                "#{app.guid}",
+                "#{human_mb(app.memory * count)}",
+                "(#{human_mb(app.memory)} x #{count})",
+              ]
+            else
+              [
+                "#{b(deas)}",
+                c("unknown", :warning),
+                "#{app_guid}",
+                "?",
+                "(? x #{count})",
+              ]
+            end
+
+          if include_stats && app
+            row << app_stats(app)
           end
 
-        if include_stats && app
-          row << app_stats(app)
-        end
+          if include_location && app
+            row << "#{c(app.space.organization.name, :name)} / #{c(app.space.name, :name)}"
+          end
 
-        if include_location && app
-          row << "#{c(app.space.organization.name, :name)} / #{c(app.space.name, :name)}"
+          row
         end
-
-        row
       end
 
-      table(
-        columns,
-        rows)
+      apps_table.render([columns] + rows)
+    end
+
+    def apps_table
+      @apps_table ||= AppsTable.new
     end
 
     def app_stats(app)
@@ -170,6 +194,37 @@ module CFTools
         d("none")
       else
         vals.join(",")
+      end
+    end
+
+    class AppsTable
+      include CF::Spacing
+
+      def spacings
+        @spacings ||= Hash.new(0)
+      end
+
+      def render(rows)
+        num_columns = rows.first ? rows.first.size : 0
+
+        rows.each do |row|
+          next unless row
+          row = row.call if row.respond_to?(:call)
+
+          start_line("")
+
+          row.each.with_index do |col, i|
+            next unless col
+
+            width = text_width(col)
+            spacings[i] = width if width > spacings[i]
+
+            print justify(col, spacings[i])
+            print "   " unless i + 1 == num_columns
+          end
+
+          line
+        end
       end
     end
   end

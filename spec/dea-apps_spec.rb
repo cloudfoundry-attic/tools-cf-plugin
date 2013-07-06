@@ -32,25 +32,89 @@ describe CFTools::DEAApps do
     EM.stub(:add_periodic_timer).and_yield
   end
 
-  let(:advertise) { <<PAYLOAD }
+  let(:heartbeat) { <<PAYLOAD }
 {
-  "app_id_to_count": {
-    "#{app1.guid}": #{app1.total_instances},
-    "#{app2.guid}": #{app2.total_instances},
-    "#{app3.guid}": #{app3.total_instances}
-  },
-  "available_memory": 1256,
-  "stacks": [
-    "lucid64",
-    "lucid86"
-  ],
   "prod": false,
-  "id": "2-1d0cf3bcd994d9f2c5ea22b9b624d77b"
+  "dea": "2-4b293b726167fbc895af5a7927c0973a",
+  "droplets": [
+    {
+      "state_timestamp": 1369251231.3436642,
+      "state": "RUNNING",
+      "index": 0,
+      "instance": "app1-instance1",
+      "version": "5c0e0e10-8384-4a35-915e-872fe91ffb95",
+      "droplet": "#{app1.guid}",
+      "cc_partition": "default"
+    },
+    {
+      "state_timestamp": 1369251231.3436642,
+      "state": "CRASHED",
+      "index": 1,
+      "instance": "app2-dead-isntance",
+      "version": "deadbeef-8384-4a35-915e-872fe91ffb95",
+      "droplet": "#{app2.guid}",
+      "cc_partition": "default"
+    },
+    {
+      "state_timestamp": 1369251231.3436642,
+      "state": "RUNNING",
+      "index": 1,
+      "instance": "app2-instance1",
+      "version": "deadbeef-8384-4a35-915e-872fe91ffb95",
+      "droplet": "#{app2.guid}",
+      "cc_partition": "default"
+    },
+    {
+      "state_timestamp": 1369251231.3436642,
+      "state": "RUNNING",
+      "index": 1,
+      "instance": "app2-instance2",
+      "version": "deadbeef-8384-4a35-915e-872fe91ffb95",
+      "droplet": "#{app2.guid}",
+      "cc_partition": "default"
+    },
+    {
+      "state_timestamp": 1369251225.2800167,
+      "state": "RUNNING",
+      "index": 0,
+      "instance": "app3-instance1",
+      "version": "bdc3b7d7-5a55-455d-ac66-ba82a9ad43e7",
+      "droplet": "#{app3.guid}",
+      "cc_partition": "default"
+    },
+    {
+      "state_timestamp": 1369251225.2800167,
+      "state": "RUNNING",
+      "index": 0,
+      "instance": "app3-instance2",
+      "version": "bdc3b7d7-5a55-455d-ac66-ba82a9ad43e7",
+      "droplet": "#{app3.guid}",
+      "cc_partition": "default"
+    },
+    {
+      "state_timestamp": 1369251225.2800167,
+      "state": "RUNNING",
+      "index": 0,
+      "instance": "app3-instance3",
+      "version": "bdc3b7d7-5a55-455d-ac66-ba82a9ad43e7",
+      "droplet": "#{app3.guid}",
+      "cc_partition": "default"
+    },
+    {
+      "state_timestamp": 1369251225.2800167,
+      "state": "RUNNING",
+      "index": 0,
+      "instance": "app3-instance4",
+      "version": "bdc3b7d7-5a55-455d-ac66-ba82a9ad43e7",
+      "droplet": "#{app3.guid}",
+      "cc_partition": "default"
+    }
+  ]
 }
 PAYLOAD
 
   before do
-    NATS.stub(:subscribe).and_yield(advertise)
+    NATS.stub(:subscribe).and_yield(heartbeat)
   end
 
   it "outputs the list of apps, memory and math" do

@@ -1,0 +1,59 @@
+{
+  "2": {
+    "state": "RUNNING",
+    "stats": {
+      "name": "myapp3",
+      "uris": [],
+      "host": "10.10.17.8",
+      "port": 61573,
+      "uptime": 92003,
+      "mem_quota": 268435456,
+      "disk_quota": 1073741824,
+      "fds_quota": 16384,
+      "usage": {
+        "time": "2013-07-06 21:51:06 +0000",
+        "cpu": 0.125,
+        "mem": 15622144,
+        "disk": 76009472
+      }
+    }
+  },
+  "1": {
+    "state": "RUNNING",
+    "stats": {
+      "name": "myapp3",
+      "uris": [],
+      "host": "10.10.17.7",
+      "port": 61215,
+      "uptime": 92876,
+      "mem_quota": 268435456,
+      "disk_quota": 1073741824,
+      "fds_quota": 16384,
+      "usage": {
+        "time": "2013-07-06 21:51:06 +0000",
+        "cpu": 0.06125,
+        "mem": 14938112,
+        "disk": 76001280
+      }
+    }
+  },
+  "0": {
+    "state": "RUNNING",
+    "stats": {
+      "name": "myapp3",
+      "uris": [],
+      "host": "10.10.17.15",
+      "port": 61475,
+      "uptime": 92443,
+      "mem_quota": 268435456,
+      "disk_quota": 1073741824,
+      "fds_quota": 16384,
+      "usage": {
+        "time": "2013-07-06 21:51:06 +0000",
+        "cpu": 0.1123,
+        "mem": 14925824,
+        "disk": 76001280
+      }
+    }
+  }
+}

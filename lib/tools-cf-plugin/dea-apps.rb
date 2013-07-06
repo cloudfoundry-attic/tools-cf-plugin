@@ -16,7 +16,9 @@ module CFTools
     input :password, :alias => "-p", :default => "nats",
           :desc => "NATS server password"
     input :location, :alias => "-l", :default => false,
-          :desc => "Include application's location (org/space) in table"
+          :desc => "Include application's location (org/space)"
+    input :stats, :alias => "-s", :default => false,
+          :desc => "Include application's runtime stats"
     def dea_apps
       host = input[:host]
       port = input[:port]
@@ -25,7 +27,8 @@ module CFTools
 
       render_apps(
         "nats://#{user}:#{pass}@#{host}:#{port}",
-        :include_location => input[:location])
+        :include_location => input[:location],
+        :include_stats => input[:stats])
     end
 
     private
@@ -71,6 +74,7 @@ module CFTools
 
     def render_table(options = {})
       include_location = options[:include_location]
+      include_stats = options[:include_stats]
 
       app_counts = Hash.new(0)
       app_deas = Hash.new { |h, k| h[k] = [] }
@@ -83,6 +87,7 @@ module CFTools
       end
 
       columns = %w[dea app guid reserved math]
+      columns << "stats" if include_stats
       columns << "org/space" if include_location
 
       rows = app_counts.sort_by { |app_guid, count|
@@ -100,7 +105,7 @@ module CFTools
               "#{c(app.name, :name)}",
               "#{app.guid}",
               "#{human_mb(app.memory * count)}",
-              "(#{human_mb(app.memory)} x #{count})"
+              "(#{human_mb(app.memory)} x #{count})",
             ]
           else
             [
@@ -108,9 +113,13 @@ module CFTools
               c("unknown", :warning),
               "#{app_guid}",
               "?",
-              "(? x #{count})"
+              "(? x #{count})",
             ]
           end
+
+        if include_stats && app
+          row << app_stats(app)
+        end
 
         if include_location && app
           row << "#{c(app.space.organization.name, :name)} / #{c(app.space.name, :name)}"
@@ -122,6 +131,19 @@ module CFTools
       table(
         columns,
         rows)
+    end
+
+    def app_stats(app)
+      app.stats.sort_by(&:first).collect do |index, info|
+        if info[:state] == "RUNNING"
+          "%s: %0.1f%" % [index, info[:stats][:usage][:cpu] * 100]
+        else
+          "%s: %s" % [
+            index,
+            c(info[:state].downcase, state_color(info[:state]))
+          ]
+        end
+      end.join(", ")
     end
 
     def human_mb(mem)

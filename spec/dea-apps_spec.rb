@@ -120,18 +120,18 @@ PAYLOAD
   it "outputs the list of apps, memory and math" do
     cf %W[dea-apps]
     expect(output).to say(%r{dea\s+app\s+guid\s+reserved\s+math})
-    expect(output).to say(%r{2\s+myapp3\s+myappguid-3\s+4G\s+\(1G\s+x\s+4\)})
-    expect(output).to say(%r{2\s+myapp2\s+myappguid-2\s+512M\s+\(256M\s+x\s+2\)})
     expect(output).to say(%r{2\s+myapp1\s+myappguid-1\s+128M\s+\(128M\s+x\s+1\)})
+    expect(output).to say(%r{2\s+myapp2\s+myappguid-2\s+512M\s+\(256M\s+x\s+2\)})
+    expect(output).to say(%r{2\s+myapp3\s+myappguid-3\s+4G\s+\(1G\s+x\s+4\)})
   end
 
   context "when --location is provided" do
     it "includes the org and space in the table" do
       cf %W[dea-apps --location]
       expect(output).to say(%r{^.*\s+org/space})
-      expect(output).to say(%r{^.*\s+organization-\w+ / space-\w+})
-      expect(output).to say(%r{^.*\s+organization-\w+ / space-\w+})
-      expect(output).to say(%r{^.*\s+organization-\w+ / space-\w+})
+      expect(output).to say(%r{^.*\s+#{app1.space.organization.name} / #{app1.space.name}})
+      expect(output).to say(%r{^.*\s+#{app2.space.organization.name} / #{app2.space.name}})
+      expect(output).to say(%r{^.*\s+#{app3.space.organization.name} / #{app3.space.name}})
     end
   end
 
@@ -156,12 +156,12 @@ PAYLOAD
     it "includes the the app's running stats" do
       cf %W[dea-apps --stats]
       expect(output).to say(%r{^.*\s+stats})
-      expect(output).to say(%r{^.*\s+0: 11\.2%, 1: 6\.1%, 2: 12\.5%})
-      expect(output).to say(%r{^.*\s+0: 100\.0%, 1: 50\.0%})
       expect(output).to say(%r{^.*\s+0: 1\.2%})
+      expect(output).to say(%r{^.*\s+0: 100\.0%, 1: 50\.0%})
+      expect(output).to say(%r{^.*\s+0: 11\.2%, 1: 6\.1%, 2: 12\.5%})
     end
 
-    context "when an instance is down" do
+    context "and an instance is down" do
       before do
         stub_request(:get, "#{client.target}/v2/apps/#{app3.guid}/stats").
           to_return(

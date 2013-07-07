@@ -113,7 +113,7 @@ module CFTools
         else
           0
         end
-      }.reverse.collect do |app_guid, count|
+      }.collect do |app_guid, count|
         proc do
           app = client_app(app_guid)
 

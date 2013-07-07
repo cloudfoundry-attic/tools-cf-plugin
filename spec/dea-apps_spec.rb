@@ -177,10 +177,10 @@ PAYLOAD
     end
   end
 
-  context "when the server drops us for being a slow consumer" do
+  context "when the server drops the connection" do
     it "reconnects" do
       expect(NATS).to receive(:subscribe).and_raise(
-        NATS::ServerError, "Slow consumer detected, connection dropped")
+        NATS::ServerError, "connection dropped")
 
       expect(NATS).to receive(:start).twice
 
@@ -189,7 +189,7 @@ PAYLOAD
 
     it "says it's reconnecting" do
       expect(NATS).to receive(:subscribe).and_raise(
-        NATS::ServerError, "Slow consumer detected, connection dropped")
+        NATS::ServerError, "connection dropped")
 
       cf %W[dea-apps]
 

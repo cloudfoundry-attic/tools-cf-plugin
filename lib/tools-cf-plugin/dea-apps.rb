@@ -46,11 +46,11 @@ module CFTools
         end
       end
     rescue NATS::ServerError => e
-      if e.to_s =~ /slow consumer/i
+      if e.to_s =~ /connection dropped/i
         line c("dropped by server; reconnecting...", :error)
         retry
       else
-        lien c("server error: #{e}", :error)
+        raise
       end
     end
 

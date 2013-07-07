@@ -160,7 +160,7 @@ module CFTools
     def app_stats(app)
       app.stats.sort_by(&:first).collect do |index, info|
         if info[:state] == "RUNNING"
-          "%s: %0.1f%" % [index, info[:stats][:usage][:cpu] * 100]
+          "%s: %s" % [index, percentage(info[:stats][:usage][:cpu] * 100)]
         else
           "%s: %s" % [
             index,
@@ -170,6 +170,19 @@ module CFTools
       end.join(", ")
     rescue CFoundry::StatsError, CFoundry::AppNotFound
       d("unknown")
+    end
+
+    def percentage(num, low = 10, mid = 70)
+      color =
+        if num <= low
+          :good
+        elsif num <= mid
+          :warning
+        else
+          :bad
+        end
+
+      c(format("%.1f\%", num), color)
     end
 
     def human_mb(mem)

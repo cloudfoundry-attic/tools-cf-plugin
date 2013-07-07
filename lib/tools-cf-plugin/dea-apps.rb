@@ -168,6 +168,8 @@ module CFTools
           ]
         end
       end.join(", ")
+    rescue CFoundry::StatsError, CFoundry::AppNotFound
+      d("unknown")
     end
 
     def human_mb(mem)

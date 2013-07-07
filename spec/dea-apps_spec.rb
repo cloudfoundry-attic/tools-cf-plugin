@@ -175,6 +175,26 @@ PAYLOAD
         expect(output).to say(%r{^.*\s+0: 11\.2%, 1: down, 2: 12\.5%})
       end
     end
+
+    context "and an app is stopped by the time we request the stats" do
+      it "prints the state as down for that index" do
+        expect(app1).to receive(:stats).and_raise(CFoundry::StatsError)
+
+        cf %W[dea-apps --stats]
+        expect(output).to say(%r{^.*\s+stats})
+        expect(output).to say(%r{^.*\s+unknown})
+      end
+    end
+
+    context "and an app is deleted by the time we request the stats" do
+      it "prints the state as down for that index" do
+        expect(app1).to receive(:stats).and_raise(CFoundry::AppNotFound)
+
+        cf %W[dea-apps --stats]
+        expect(output).to say(%r{^.*\s+stats})
+        expect(output).to say(%r{^.*\s+unknown})
+      end
+    end
   end
 
   context "when the server drops the connection" do

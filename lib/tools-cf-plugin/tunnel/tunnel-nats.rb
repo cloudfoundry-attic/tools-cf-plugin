@@ -1,5 +1,4 @@
 require "yaml"
-require "cli"
 require "net/ssh"
 
 require "cf/cli"
@@ -41,7 +40,7 @@ module CFTools::Tunnel
 
       nport =
         with_progress("Opening local tunnel to NATS") do
-          tunnel_to(nats["address"], nats["port"], gateway) 
+          tunnel_to(nats["address"], nats["port"], gateway)
         end
 
       with_progress("Logging in as admin user") do

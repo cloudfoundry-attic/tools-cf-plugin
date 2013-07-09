@@ -9,6 +9,8 @@ require "webmock/rspec"
 require "cf/test_support"
 require "blue-shell"
 require "nats/client"
+require "cli" # BOSH
+              # yes really
 
 require "#{SPEC_ROOT}/../lib/tools-cf-plugin/plugin"
 

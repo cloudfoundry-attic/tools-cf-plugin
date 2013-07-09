@@ -1,5 +1,4 @@
 require "yaml"
-require "cli"
 require "net/ssh/gateway"
 
 require "cf/cli"
@@ -8,8 +7,9 @@ module CFTools
   module Tunnel
     class Base < CF::CLI
       BOSH_CONFIG = "~/.bosh_config"
-      
+
       def precondition
+        require "cli"
       end
 
       def director(director_host, gateway)

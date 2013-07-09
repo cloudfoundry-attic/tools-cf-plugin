@@ -16,7 +16,6 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency "cfoundry"
   s.add_runtime_dependency "nats"
-  s.add_runtime_dependency "bosh_cli", ">= 1.5.0.pre.3", "< 1.6"
   s.add_runtime_dependency "net-ssh"
   s.add_runtime_dependency "pry"
 

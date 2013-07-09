@@ -1,6 +1,5 @@
 require "cf/cli"
 require "pry"
-require "cli"
 
 module CFTools
   class Shell < CF::CLI

@@ -1,5 +1,6 @@
 require "tools-cf-plugin/watch"
 require "tools-cf-plugin/shell"
+require "tools-cf-plugin/app-placement"
 require "tools-cf-plugin/dea-ads"
 require "tools-cf-plugin/dea-apps"
 require "tools-cf-plugin/tunnel/tunnel-nats"

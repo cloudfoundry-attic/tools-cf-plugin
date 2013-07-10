@@ -1,5 +1,6 @@
 require "cf/cli"
 require "nats/client"
+require "set"
 
 module CFTools
   class AppPlacement < CF::App::Base
@@ -30,6 +31,18 @@ module CFTools
     end
 
     private
+    def apps
+      @apps ||= {}
+    end
+
+    def known_app_ids
+      @known_app_ids ||= Set.new
+    end
+
+    def known_dea_ids
+      @known_dea_ids ||= Set.new
+    end
+
     def render_apps(uri, seconds_to_watch, options = {})
       NATS.start(:uri => uri) do
         NATS.subscribe("dea.heartbeat") do |msg|
@@ -43,6 +56,7 @@ module CFTools
         end
       end
 
+      fill_in_zeros
       render_table
     rescue NATS::ServerError => e
       if e.to_s =~ /connection dropped/i
@@ -54,13 +68,14 @@ module CFTools
     end
 
     def register_heartbeat(dea_id, droplets)
-      note_max_dea_id(dea_id)
-
+      known_dea_ids << dea_id
       app_id_to_num_instances = Hash.new(0)
       droplets.each do |droplet|
         next unless droplet["state"] == "RUNNING"
         app_id = droplet["droplet"]
         app_id_to_num_instances[app_id] += 1
+
+        known_app_ids << app_id
       end
 
       app_id_to_num_instances.each do |app_id, num_instances|
@@ -69,23 +84,19 @@ module CFTools
       end
     end
 
-    def apps
-      @apps ||= {}
-    end
-
-    def note_max_dea_id(dea_id)
-      @max_dea_id = [@max_dea_id || 0, dea_id.to_i].max
-    end
-
-    def max_dea_id
-      @max_dea_id ||= 0
+    def fill_in_zeros
+      known_app_ids.each do |app_id|
+        known_dea_ids.each do |dea_id|
+          apps[app_id][dea_id] ||= 0
+        end
+      end
     end
 
     def render_table
       print("%-36s placement\n" % "guid")
       apps.each do |app_id, dea_id_to_num_instances|
         placements = []
-        0.upto(max_dea_id) do |dea_id|
+        0.upto(known_dea_ids.max) do |dea_id|
           placements << "#{dea_id}:#{dea_id_to_num_instances.fetch(dea_id, "?")}"
         end
 

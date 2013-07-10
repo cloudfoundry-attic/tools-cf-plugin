@@ -132,11 +132,11 @@ PAYLOAD
     end
   end
 
-  it "outputs the list of guids and placements" do
+  it "outputs the list of guids and placements, with a zero placement assumption" do
     cf %W[app-placement]
     expect(output).to say(%r{guid\s+placement})
     expect(output).to say(%r{myappguid-1\s+0:\?\s+1:1\s+2:1\D})
-    expect(output).to say(%r{myappguid-2\s+0:\?\s+1:\?\s+2:2\D})
-    expect(output).to say(%r{myappguid-3\s+0:\?\s+1:\?\s+2:4\D})
+    expect(output).to say(%r{myappguid-2\s+0:\?\s+1:0\s+2:2\D})
+    expect(output).to say(%r{myappguid-3\s+0:\?\s+1:0\s+2:4\D})
   end
 end

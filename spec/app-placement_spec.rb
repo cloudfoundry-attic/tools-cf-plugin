@@ -138,5 +138,6 @@ PAYLOAD
     expect(output).to say(%r{myappguid-1\s+0:\?\s+1:1\s+2:1\D})
     expect(output).to say(%r{myappguid-2\s+0:\?\s+1:0\s+2:2\D})
     expect(output).to say(%r{myappguid-3\s+0:\?\s+1:0\s+2:4\D})
+    expect(output).to say(%r{total      \s+0:\?\s+1:1\s+2:7\D})
   end
 end

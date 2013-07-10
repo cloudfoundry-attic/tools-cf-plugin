@@ -95,13 +95,36 @@ module CFTools
     def render_table
       print("%-36s placement\n" % "guid")
       apps.each do |app_id, dea_id_to_num_instances|
-        placements = []
-        0.upto(known_dea_ids.max) do |dea_id|
-          placements << "#{dea_id}:#{dea_id_to_num_instances.fetch(dea_id, "?")}"
-        end
-
-        print("%-36s %s\n" % [app_id, placements.join(" ")])
+        render_app(app_id, dea_id_to_num_instances)
       end
+
+      render_total
+    end
+
+    def render_app(app_id, dea_id_to_num_instances)
+      placements = []
+      0.upto(known_dea_ids.max) do |dea_id|
+        placements << "#{dea_id}:#{dea_id_to_num_instances.fetch(dea_id, "?")}"
+      end
+
+      print("%-36s %s\n" % [app_id, placements.join(" ")])
+    end
+
+    def render_total
+      totals = []
+      0.upto(known_dea_ids.max) do |dea_id|
+        if known_dea_ids.include?(dea_id)
+          total_for_dea = 0
+
+          apps.each do |app_id, dea_id_to_num_instances|
+            total_for_dea += dea_id_to_num_instances[dea_id]
+          end
+          totals << "#{dea_id}:#{total_for_dea}"
+        else
+          totals << "#{dea_id}:?"
+        end
+      end
+      print("%-36s %s\n" % ["total", totals.join(" ")])
     end
   end
 end

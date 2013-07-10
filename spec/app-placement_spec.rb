@@ -129,11 +129,21 @@ PAYLOAD
     NATS.stub(:subscribe) do |&callback|
       callback.call(dea2_heartbeat)
       callback.call(dea1_heartbeat)
+      callback.call(dea2_heartbeat) # old dea2_heartbeat should be discarded
     end
   end
 
-  it "outputs the list of guids and placements, with a zero placement assumption" do
+  it "outputs the list of guids and placements, without zeros by default" do
     cf %W[app-placement]
+    expect(output).to say(%r{guid\s+placement})
+    expect(output).to say(%r{myappguid-1\s+1:1\s+2:1\D})
+    expect(output).to say(%r{myappguid-2\s+2:2\D})
+    expect(output).to say(%r{myappguid-3\s+2:4\D})
+    expect(output).to say(%r{total      \s+1:1\s+2:7\D})
+  end
+
+  it "outputs the list of guids and placements, with a zero if requested" do
+    cf %W[app-placement -z]
     expect(output).to say(%r{guid\s+placement})
     expect(output).to say(%r{myappguid-1\s+0:\?\s+1:1\s+2:1\D})
     expect(output).to say(%r{myappguid-2\s+0:\?\s+1:0\s+2:2\D})

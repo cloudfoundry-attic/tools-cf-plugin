@@ -18,6 +18,8 @@ module CFTools
           :desc => "NATS server password"
     input :time, :alias => "-t", :default => 12,
           :desc => "Seconds to watch heartbeats"
+    input :zeros, :alias => "-z", :default => false,
+          :desc => "If set, include zero-value DEAs in output"
     def app_placement
       host = input[:host]
       port = input[:port]
@@ -41,6 +43,10 @@ module CFTools
 
     def known_dea_ids
       @known_dea_ids ||= Set.new
+    end
+
+    def render_zeros?
+      !!input[:zeros]
     end
 
     def render_apps(uri, seconds_to_watch, options = {})
@@ -104,7 +110,12 @@ module CFTools
     def render_app(app_id, dea_id_to_num_instances)
       placements = []
       0.upto(known_dea_ids.max) do |dea_id|
-        placements << "#{dea_id}:#{dea_id_to_num_instances.fetch(dea_id, "?")}"
+        if dea_id_to_num_instances.has_key?(dea_id)
+          num_instances = dea_id_to_num_instances[dea_id]
+          placements << "#{dea_id}:#{num_instances}" if num_instances > 0 || render_zeros?
+        else
+          placements << "#{dea_id}:?" if render_zeros?
+        end
       end
 
       print("%-36s %s\n" % [app_id, placements.join(" ")])
@@ -121,7 +132,7 @@ module CFTools
           end
           totals << "#{dea_id}:#{total_for_dea}"
         else
-          totals << "#{dea_id}:?"
+          totals << "#{dea_id}:?" if render_zeros?
         end
       end
       print("%-36s %s\n" % ["total", totals.join(" ")])

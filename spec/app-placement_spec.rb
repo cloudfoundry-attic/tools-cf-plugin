@@ -20,7 +20,6 @@ describe CFTools::AppPlacement do
 
   before { stub_client }
 
-
   before do
     NATS.stub(:start).and_yield
     EM.stub(:add_timer).and_yield
@@ -149,5 +148,17 @@ PAYLOAD
     expect(output).to say(%r{myappguid-2\s+0:\?\s+1:0\s+2:2\D})
     expect(output).to say(%r{myappguid-3\s+0:\?\s+1:0\s+2:4\D})
     expect(output).to say(%r{total      \s+0:\?\s+1:1\s+2:7\D})
+  end
+
+  describe "observation time" do
+    it "defaults to 12 seconds (slightly longer than a single heartbeat interval)" do
+      EM.should_receive(:add_timer).with(12)
+      cf %W[app-placement]
+    end
+
+    it "can be overridden" do
+      EM.should_receive(:add_timer).with(3)
+      cf %W[app-placement --time 3]
+    end
   end
 end

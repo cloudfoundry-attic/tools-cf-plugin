@@ -24,6 +24,7 @@ gem "tools-cf-plugin"
 watch APP       Watch messages going over NATS relevant to an application
 dea-apps        See summary information about apps running on DEAs
 dea-ads         Watch the DEA advertisements
+app-placement   See the distribution of apps over DEAs
 ```
 
 

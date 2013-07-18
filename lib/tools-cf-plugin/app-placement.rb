@@ -108,21 +108,24 @@ module CFTools
     end
 
     def render_app(app_id, dea_id_to_num_instances)
+      total_instances = 0
       placements = []
       0.upto(known_dea_ids.max) do |dea_id|
         if dea_id_to_num_instances.has_key?(dea_id)
           num_instances = dea_id_to_num_instances[dea_id]
+          total_instances += num_instances
           placements << "#{dea_id}:#{num_instances}" if num_instances > 0 || render_zeros?
         else
           placements << "#{dea_id}:?" if render_zeros?
         end
       end
 
-      print("%-36s %s\n" % [app_id, placements.join(" ")])
+      print("%-36s %s T:%s\n" % [app_id, placements.join(" "), total_instances])
     end
 
     def render_total
       totals = []
+      grand_total = 0
       0.upto(known_dea_ids.max) do |dea_id|
         if known_dea_ids.include?(dea_id)
           total_for_dea = 0
@@ -131,11 +134,12 @@ module CFTools
             total_for_dea += dea_id_to_num_instances[dea_id]
           end
           totals << "#{dea_id}:#{total_for_dea}"
+          grand_total += total_for_dea
         else
           totals << "#{dea_id}:?" if render_zeros?
         end
       end
-      print("%-36s %s\n" % ["total", totals.join(" ")])
+      print("%-36s %s T:%s\n" % ["total", totals.join(" "), grand_total])
     end
   end
 end

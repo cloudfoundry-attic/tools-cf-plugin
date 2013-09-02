@@ -31,10 +31,7 @@ module CFTools::Tunnel
 
       line "Director: #{director.director_uri}"
 
-      manifest =
-        with_progress("Downloading deployment manifest") do
-          current_deployment_manifest(director)
-        end
+      manifest = current_deployment_manifest(director)
 
       nats = manifest["properties"]["nats"]
 

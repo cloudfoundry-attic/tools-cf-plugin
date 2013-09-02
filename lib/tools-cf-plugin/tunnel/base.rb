@@ -67,6 +67,25 @@ module CFTools
         Net::SSH::Gateway.new(host, user).open(address, remote_port)
       end
 
+      def current_deployment(director)
+        deployments =
+          with_progress("Getting deployments") do
+            director.list_deployments
+          end
+
+        fail "No deployments." if deployments.empty?
+
+        cf_deployments = deployments.select do |d|
+          d["releases"].any? { |r| ["cf-release", "cf"].include?(r["name"]) }
+        end
+
+        return cf_deployments.first if cf_deployments.size == 1
+
+        ask("Which deployment?",
+            :choices => deployments,
+            :display => proc { |x| x["name"] })
+      end
+
       private
 
       def address_reachable?(host, port)
@@ -92,17 +111,12 @@ module CFTools
         auth
       end
 
-      def current_deployment(director)
-        deployments = director.list_deployments
-
-        deployments.find do |d|
-          d["releases"].any? { |r| r["name"] == "cf-release" }
-        end
-      end
-
       def current_deployment_manifest(director)
         deployment = current_deployment(director)
-        YAML.load(director.get_deployment(deployment["name"])["manifest"])
+
+        with_progress("Downloading #{c(deployment["name"], :name)} manifest") do
+          YAML.load(director.get_deployment(deployment["name"])["manifest"])
+        end
       end
 
       def save_auth(director, auth)

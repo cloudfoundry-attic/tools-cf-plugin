@@ -31,10 +31,7 @@ module CFTools::Tunnel
 
       director = connected_director(director_host, gateway)
 
-      deployment =
-        with_progress("Getting deployment info") do
-          current_deployment(director)
-        end
+      deployment = current_deployment(director)
 
       locations =
         with_progress("Finding logs for #{c(deployment["name"], :name)}") do

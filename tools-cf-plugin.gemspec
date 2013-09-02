@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "timecop", "~> 0.6.1"
   s.add_development_dependency "shoulda-matchers", "~> 1.5.6"
   s.add_development_dependency "json_pure", "~> 1.7"
-  s.add_development_dependency "blue-shell", "~> 0.1.0" # 0.2 broke things :(
+  s.add_development_dependency "blue-shell", "~> 0.2"
   s.add_development_dependency "fakefs"
   s.add_development_dependency "factory_girl"
 

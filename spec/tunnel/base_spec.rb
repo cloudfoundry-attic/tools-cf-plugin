@@ -77,6 +77,68 @@ module CFTools::Tunnel
       end
     end
 
+    describe "#current_deployment" do
+      let(:director) { double }
+
+      before { director.stub(:list_deployments => deployments) }
+
+      let(:cf_deployment) do
+        { "name" => "a", "releases" => [{ "name" => "cf" }] }
+      end
+
+      let(:cf_release_deployment) do
+        { "name" => "b", "releases" => [{ "name" => "cf-release" }] }
+      end
+
+      let(:other_deployment) do
+        { "name" => "b", "releases" => [{ "name" => "some-release" }] }
+      end
+
+      context "when there are no deployments" do
+        let(:deployments) { [] }
+
+        it "fails" do
+          expect {
+            subject.current_deployment(director)
+          }.to raise_error(/no deployments/i)
+        end
+      end
+
+      context "when there is one deployment with release name 'cf'" do
+        let(:deployments) { [cf_deployment] }
+
+        it "returns that deployment" do
+          expect(subject.current_deployment(director)).to eq(cf_deployment)
+        end
+      end
+
+      context "when there is one deployment with release name 'cf-release'" do
+        let(:deployments) { [cf_release_deployment] }
+
+        it "returns that deployment" do
+          expect(subject.current_deployment(director)).to eq(cf_release_deployment)
+        end
+      end
+
+      context "when there are multiple deployments" do
+        let(:deployments) { [cf_deployment, cf_release_deployment, other_deployment] }
+
+        it "asks which deployment to use" do
+          called = false
+
+          should_ask("Which deployment?", anything) do |_, opts|
+            called = true
+            expect(opts[:choices]).to eq(deployments)
+            expect(opts[:display].call(deployments.first)).to eq("a")
+            cf_release_deployment
+          end
+
+          expect(subject.current_deployment(director)).to eq(cf_release_deployment)
+          expect(called).to be_true
+        end
+      end
+    end
+
     describe "#authenticate_with_director" do
       let(:director) { double }
 

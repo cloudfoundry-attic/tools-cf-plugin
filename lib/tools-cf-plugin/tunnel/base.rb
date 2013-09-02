@@ -63,8 +63,13 @@ module CFTools
       end
 
       def tunnel_to(address, remote_port, gateway)
-        user, host = gateway.split("@", 2)
-        Net::SSH::Gateway.new(host, user).open(address, remote_port)
+        local_port = grab_ephemeral_port
+
+        Process.spawn("ssh -N -L #{local_port}:#{address}:#{remote_port} #{gateway}")
+
+        wait_for_port_open(local_port)
+
+        local_port
       end
 
       def current_deployment(director)
@@ -87,6 +92,25 @@ module CFTools
       end
 
       private
+
+      def grab_ephemeral_port
+        socket = TCPServer.new('0.0.0.0', 0)
+
+        socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true)
+
+        Socket.do_not_reverse_lookup = true
+
+        port = socket.addr[1]
+        socket.close
+
+        port
+      end
+
+      def wait_for_port_open(port)
+        Timeout.timeout(10) do
+          sleep 0.5 until address_reachable?("127.0.0.1", port)
+        end
+      end
 
       def address_reachable?(host, port)
         Timeout.timeout(1) do

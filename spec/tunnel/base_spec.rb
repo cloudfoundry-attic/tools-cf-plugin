@@ -63,16 +63,18 @@ module CFTools::Tunnel
     describe "#tunnel_to" do
       let(:gateway) { double }
 
-      before { gateway.stub(:open) }
+      before { Process.stub(:spawn) }
+
+      before { subject.stub(:wait_for_port_open) }
 
       it "creates a gateway using the given user/host" do
-        expect(Net::SSH::Gateway).to receive(:new).with("ghost", "guser") { gateway }
-        subject.tunnel_to("1.2.3.4", 1234, "guser@ghost")
-      end
+        subject.stub(:grab_ephemeral_port => 5678)
 
-      it "opens a local tunnel and returns its port" do
-        Net::SSH::Gateway.stub(:new).with("ghost", "guser") { gateway }
-        expect(gateway).to receive(:open).with("1.2.3.4", 1234) { 5678 }
+        expect(Process).to receive(:spawn).with(
+          "ssh -N -L 5678:1.2.3.4:1234 guser@ghost")
+
+        expect(subject).to receive(:wait_for_port_open).with(5678)
+
         expect(subject.tunnel_to("1.2.3.4", 1234, "guser@ghost")).to eq(5678)
       end
     end

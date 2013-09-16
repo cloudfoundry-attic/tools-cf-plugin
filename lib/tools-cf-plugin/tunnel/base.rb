@@ -65,7 +65,7 @@ module CFTools
       def tunnel_to(address, remote_port, gateway)
         local_port = grab_ephemeral_port
 
-        Process.spawn("ssh -N -L #{local_port}:#{address}:#{remote_port} #{gateway}")
+        Process.spawn("ssh -o StrictHostKeyChecking=no -N -L #{local_port}:#{address}:#{remote_port} #{gateway}")
 
         wait_for_port_open(local_port)
 

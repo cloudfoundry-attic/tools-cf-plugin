@@ -71,7 +71,7 @@ module CFTools::Tunnel
         subject.stub(:grab_ephemeral_port => 5678)
 
         expect(Process).to receive(:spawn).with(
-          "ssh -N -L 5678:1.2.3.4:1234 guser@ghost")
+          "ssh -o StrictHostKeyChecking=no -N -L 5678:1.2.3.4:1234 guser@ghost")
 
         expect(subject).to receive(:wait_for_port_open).with(5678)
 

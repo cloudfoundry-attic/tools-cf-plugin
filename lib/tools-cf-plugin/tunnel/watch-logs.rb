@@ -8,10 +8,13 @@ require "tools-cf-plugin/tunnel/stream_location"
 module CFTools::Tunnel
   class WatchLogs < Base
     LOGS = {
-      "cloud_controller" => ["cloud_controller_ng/cloud_controller_ng.log"],
-      "dea_next" => ["dea_next/dea_next.log"],
-      "health_manager" => ["health_manager_next/health_manager_next.log"],
-      "router" => ["gorouter/gorouter.log"]
+      "api_z1" => ["cloud_controller_ng/cloud_controller_ng.log"],
+      "api_z2" => ["cloud_controller_ng/cloud_controller_ng.log"],
+      "runner_z1" => ["dea_next/dea_next.log"],
+      "runner_z2" => ["dea_next/dea_next.log"],
+      "hm_z1" => ["health_manager_next/health_manager_next.log"],
+      "router_z1" => ["gorouter/gorouter.log"],
+      "router_z2" => ["gorouter/gorouter.log"],
     }
 
     # colorize if told to; don't check if output is tty

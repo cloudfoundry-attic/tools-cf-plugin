@@ -9,9 +9,9 @@ module CFTools::Tunnel
     let(:stream) { double }
 
     let(:vms) do
-      [ { "ips" => ["1.2.3.4"], "job_name" => "cloud_controller", "index" => 0 },
-        { "ips" => ["1.2.3.5"], "job_name" => "dea_next", "index" => 0 },
-        { "ips" => ["1.2.3.6"], "job_name" => "dea_next", "index" => 1 }
+      [ { "ips" => ["1.2.3.4"], "job_name" => "api_z1", "index" => 0 },
+        { "ips" => ["1.2.3.5"], "job_name" => "runner_z1", "index" => 0 },
+        { "ips" => ["1.2.3.6"], "job_name" => "runner_z1", "index" => 1 }
       ]
     end
 
@@ -72,9 +72,9 @@ module CFTools::Tunnel
     context "when there are jobs to log" do
       it "streams their locations" do
         expect(stream).to receive(:stream).with(hash_including(
-          ["cloud_controller", 0] => anything,
-          ["dea_next", 0] => anything,
-          ["dea_next", 1] => anything))
+          ["api_z1", 0] => anything,
+          ["runner_z1", 0] => anything,
+          ["runner_z1", 1] => anything))
 
         cf %W[watch-logs some-director.com]
       end
@@ -85,17 +85,17 @@ module CFTools::Tunnel
         entry3_time = Time.new(2011, 06, 21, 1, 2, 5)
 
         entry1 = LogEntry.new(
-          "cloud_controller/0",
+          "api_z1/0",
           %Q[{"message":"a","timestamp":#{entry1_time.to_f},"log_level":"info"}],
           :stdout)
 
         entry2 = LogEntry.new(
-          "dea_next/1",
+          "runner_z1/1",
           %Q[{"message":"b","timestamp":#{entry2_time.to_f},"log_level":"warn","data":{"foo":"bar"}}],
           :stdout)
 
         entry3 = LogEntry.new(
-          "dea_next/0",
+          "runner_z1/0",
           %Q[{"message":"c","timestamp":#{entry3_time.to_f},"log_level":"error"}],
           :stdout)
 
@@ -103,15 +103,15 @@ module CFTools::Tunnel
 
         cf %W[watch-logs some-director.com]
 
-        expect(output).to say("cloud_controller/0   01:02:03 AM  info    a  \n")
-        expect(output).to say("dea_next/1           01:02:04 AM  warn    b  {\"foo\"=>\"bar\"}\n")
-        expect(output).to say("dea_next/0           01:02:05 AM  error   c  \n")
+        expect(output).to say("api_z1/0      01:02:03 AM  info    a  \n")
+        expect(output).to say("runner_z1/1   01:02:04 AM  warn    b  {\"foo\"=>\"bar\"}\n")
+        expect(output).to say("runner_z1/0   01:02:05 AM  error   c  \n")
       end
 
       context "and components were specified" do
         it "streams their locations" do
-          expect(stream).to receive(:stream).with(["cloud_controller", 0] => anything)
-          cf %W[watch-logs some-director.com cloud_controller]
+          expect(stream).to receive(:stream).with(["api_z1", 0] => anything)
+          cf %W[watch-logs some-director.com api_z1]
         end
       end
     end

@@ -439,7 +439,11 @@ module CFTools
     end
 
     def pretty_version(guid)
-      guid.split("-").first
+      if guid
+        guid.split("-").first
+      else
+        d("none")
+      end
     end
 
     def pretty_app(guid)

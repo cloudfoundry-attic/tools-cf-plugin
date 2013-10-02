@@ -122,7 +122,7 @@ module CFTools
       end
 
       def director_for(port, host = "127.0.0.1")
-        Bosh::Cli::Director.new("https://#{host}:#{port}")
+        Bosh::Cli::Client::Director.new("https://#{host}:#{port}")
       end
 
       def director_credentials(director)

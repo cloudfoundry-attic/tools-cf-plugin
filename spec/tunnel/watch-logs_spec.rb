@@ -4,7 +4,7 @@ module CFTools::Tunnel
   describe WatchLogs do
     let(:director_uri) { "https://some-director.com:25555" }
 
-    let(:director) { Bosh::Cli::Director.new(director_uri) }
+    let(:director) { Bosh::Cli::Client::Director.new(director_uri) }
 
     let(:stream) { double }
 

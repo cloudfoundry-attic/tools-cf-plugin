@@ -269,7 +269,7 @@ PAYLOAD
       "state": "RUNNING",
       "index": 0,
       "instance": "some app instance",
-      "version": "5c0e0e10-8384-4a35-915e-872fe91ffb95",
+      "version": "beefdead-8384-4a35-915e-872fe91ffb95",
       "droplet": "#{app.guid}",
       "cc_partition": "default"
     },
@@ -299,7 +299,7 @@ PAYLOAD
       it "prints only the application's entry" do
         cf %W[watch myapp]
 
-        expect(output).to say("dea: 1, running: 1, crashed: 1")
+        expect(output).to say("dea: 1, running: 1 (myapp @ beefdead), crashed: 1 (myapp @ deadbeef)")
       end
     end
   end
@@ -681,14 +681,15 @@ PAYLOAD
     "myapp.com",
     "myotherroute.com"
   ],
-  "droplet": "#{app.guid}"
+  "droplet": "#{app.guid}",
+  "version": "deadbeef-bar-baz"
 }
 PAYLOAD
 
-    it "prints the index being stopped" do
+    it "prints the new uris and new version" do
       cf %W[watch]
 
-      expect(output).to say("app: myapp, uris: myapp.com, myotherroute.com")
+      expect(output).to say("app: myapp, uris: myapp.com, myotherroute.com, new version: deadbeef")
     end
   end
 

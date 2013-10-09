@@ -190,14 +190,20 @@ module CFTools
       dea, _ = payload["dea"].split("-", 2)
 
       states = Hash.new(0)
+      apps_by_state = Hash.new { |h, k| h[k] = [] }
       payload["droplets"].each do |droplet|
         next unless !app || droplet["droplet"] == app.guid
         states[droplet["state"]] += 1
+        apps_by_state[droplet["state"]] << [droplet["droplet"], droplet["version"]]
       end
 
       [ d(sub),
         "dea: #{dea}, " + states.collect { |state, count|
-          "#{c(state.downcase, state_color(state))}: #{count}"
+          apps = apps_by_state[state].collect { |app, version|
+            "#{pretty_app(app)} @ #{pretty_version(version)}"
+          }
+
+          "#{c(state.downcase, state_color(state))}: #{count} (#{apps.join(", ")})"
         }.join(", ")
       ]
     end
@@ -272,7 +278,8 @@ module CFTools
     def pretty_dea_update(sub, payload)
       [ d(sub),
         [ "app: #{pretty_app(payload["droplet"])}",
-          "uris: #{list(payload["uris"])}"
+          "uris: #{list(payload["uris"])}",
+          "new version: #{pretty_version(payload["version"])}",
         ].join(", ")
       ]
     end

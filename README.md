@@ -8,29 +8,33 @@ This plugin provides various utility commands for administering/monitoring a Clo
 
 ### Installation
 
-If you have installed CF via gem install, use:
-```
-gem install tools-cf-plugin
+
+Bundler is the most reliable way to run cf tools:
+```bash
+git clone https://github.com/cloudfoundry/tools-cf-plugin
+cd tools-cf-plugin/
+bundle
+ssh-add <bosh_ssh_keys>/<your id_rsa for director> # use your key for the director or microbosh
+ssh vcap@<your bosh director> id # check connectivity 
+bundle exec cf tunnel-nats <your bosh director> dea-apps --gateway vcap@<your bosh director> 
 ```
 
-If you have installed CF through bundler and the Gemfile, add the following to your Gemfile:
-```
-gem "tools-cf-plugin"
-```
-
-### Usage
+### Usage if you have direct access to the NATS server
 
 ```bash
-cf watch APP       # Watch messages going over NATS relevant to an application
-cf dea-apps        # See summary information about apps running on DEAs
-cf dea-ads         # Watch the DEA advertisements
-cf app-placement   # See the distribution of apps over DEAs
+bundle exec cf watch <APP>       # Watch messages going over NATS relevant to an application
+bundle exec cf dea-apps        # See summary information about apps running on DEAs
+bundle exec cf dea-ads         # Watch the DEA advertisements
+bundle exec cf app-placement   # See the distribution of apps over DEAs
 ```
 
-If you need to tunnel your nats then use the following:
+### Usage if you must tunnel to the NATS server
 
 ```bash
-cf tunnel-nats DIRECTOR watch --gateway vcap@DIRECTOR
+bundle exec cf tunnel-nats <your bosh director> watch <APP> --gateway vcap@<your bosh director>
+bundle exec cf tunnel-nats <your bosh director> dea-apps --gateway vcap@<your bosh director>
+bundle exec cf tunnel-nats <your bosh director> dea-ads --gateway vcap@<your bosh director>
+bundle exec cf tunnel-nats <your bosh director> app-placement
 ```
 
 

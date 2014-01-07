@@ -34,7 +34,7 @@ bundle exec cf app-placement   # See the distribution of apps over DEAs
 bundle exec cf tunnel-nats <your bosh director> watch <APP> --gateway vcap@<your bosh director>
 bundle exec cf tunnel-nats <your bosh director> dea-apps --gateway vcap@<your bosh director>
 bundle exec cf tunnel-nats <your bosh director> dea-ads --gateway vcap@<your bosh director>
-bundle exec cf tunnel-nats <your bosh director> app-placement
+bundle exec cf tunnel-nats <your bosh director> app-placement --gateway vcap@<your bosh director>
 ```
 
 

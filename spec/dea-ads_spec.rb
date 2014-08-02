@@ -54,6 +54,7 @@ describe CFTools::DEAAds do
     "id3": 3
   },
   "available_memory": 1256,
+  "available_disk": 12560,
   "stacks": [
     "lucid64",
     "lucid86"
@@ -77,6 +78,7 @@ PAYLOAD
 {
   "app_id_to_count": {},
   "available_memory": 1256,
+  "available_disk": 12560,
   "stacks": [
     "lucid64"
   ],
@@ -105,6 +107,7 @@ PAYLOAD
     "id4": 1
   },
   "available_memory": 1024,
+  "available_disk": 10240,
   "stacks": [
     "lucid64"
   ],
@@ -120,7 +123,7 @@ PAYLOAD
 
         it "keeps the other entry in the table" do
           cf %W[dea-ads]
-          expect(output).to say(/^2\s+lucid64, lucid86\s+6\s+1\.2G$/)
+          expect(output).to say(/^2\s+lucid64, lucid86\s+6\s+1\.2G\s+12.3G$/)
         end
 
         it "sorts the rows by DEA index" do
@@ -138,6 +141,7 @@ PAYLOAD
     "id3": 3
   },
   "available_memory": 1000,
+  "available_disk": 10000,
   "stacks": [
     "lucid64"
   ],
@@ -153,7 +157,7 @@ PAYLOAD
 
         it "shows the difference from the last advertisement" do
           cf %W[dea-ads]
-          expect(output).to say(/^2\s+lucid64\s+5 \(-1\)\s+1000\.0M \(-256\.0M\)$/)
+          expect(output).to say(/^2\s+lucid64\s+5 \(-1\)\s+1000\.0M \(-256\.0M\)\s+9\.8G \(-2\.5G\)$/)
         end
       end
     end

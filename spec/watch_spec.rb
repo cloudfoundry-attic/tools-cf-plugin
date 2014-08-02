@@ -434,29 +434,6 @@ PAYLOAD
       end
     end
 
-    context "when the app flag is not passed in" do
-      let(:payload) { <<PAYLOAD }
-{
-  "private_instance_id": "e4a5ee2330c81fd7611eba7dbedbb499a00ae1b79f97f40a3603c8bff6fbcc6f",
-  "tags": {},
-  "port": 61111,
-  "host": "192.0.43.10",
-  "uris": [
-    "my-app.com",
-    "my-app-2.com"
-  ],
-  "app": "some_unkown_guid",
-  "dea": "1-4b293b726167fbc895af5a7927c0973a"
-}
-PAYLOAD
-
-      it "does not print anything" do
-        cf %W[watch]
-
-        expect(output).to_not say("uris: my-app.com, my-app-2.com, host: 192.0.43.10, port: 61111")
-      end
-    end
-
     context "when there's NOT an associated DEA" do
       let(:payload) { <<PAYLOAD }
 {

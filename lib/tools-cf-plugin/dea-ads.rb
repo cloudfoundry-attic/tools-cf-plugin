@@ -42,7 +42,7 @@ module CFTools
     end
 
     def render_table
-      rows = 
+      rows =
         advertisements.sort.collect do |id, (attrs, prev)|
           idx, _ = id.split("-", 2)
 
@@ -51,11 +51,14 @@ module CFTools
             diff(attrs, prev) { |x| x["app_id_to_count"].values.inject(0, &:+) },
             diff(attrs, prev, :pretty_memory, :pretty_memory_diff) do |x|
               x["available_memory"]
+            end,
+            diff(attrs, prev, :pretty_memory, :pretty_memory_diff) do |x|
+              x["available_disk"]
             end
           ]
         end
 
-      table(["dea", "stacks", "droplets", "available memory"], rows)
+      table(["dea", "stacks", "droplets", "available memory", "available disk"], rows)
     end
 
     def diff(curr, prev, pretty = nil, pretty_diff = :signed)

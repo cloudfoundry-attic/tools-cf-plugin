@@ -20,13 +20,13 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "pry"
 
   s.add_development_dependency "rake", ">= 0.9"
-  s.add_development_dependency "rspec", ">= 2.14.0.rc1", "< 3.0"
+  s.add_development_dependency "rspec", "~> 2.14"
   s.add_development_dependency "webmock", "~> 1.9"
   s.add_development_dependency "gem-release"
   s.add_development_dependency "timecop", "~> 0.6.1"
   s.add_development_dependency "shoulda-matchers", "~> 1.5.6"
   s.add_development_dependency "json_pure", "~> 1.7"
-  s.add_development_dependency "blue-shell", "~> 0.2"
+  s.add_development_dependency "blue-shell", "~> 0.3"
   s.add_development_dependency "fakefs"
   s.add_development_dependency "factory_girl"
 

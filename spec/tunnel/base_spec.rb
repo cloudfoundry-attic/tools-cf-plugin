@@ -51,12 +51,12 @@ module CFTools::Tunnel
 
       it "returns true iff director.authenticated?" do
         expect(director).to receive(:authenticated?).and_return(true)
-        expect(subject.login_to_director(director, "user", "pass")).to be_true
+        expect(subject.login_to_director(director, "user", "pass")).to be_truthy
       end
 
       it "returns false iff !director.authenticated?" do
         expect(director).to receive(:authenticated?).and_return(false)
-        expect(subject.login_to_director(director, "user", "pass")).to be_false
+        expect(subject.login_to_director(director, "user", "pass")).to be_falsey
       end
     end
 
@@ -136,7 +136,7 @@ module CFTools::Tunnel
           end
 
           expect(subject.current_deployment(director)).to eq(cf_release_deployment)
-          expect(called).to be_true
+          expect(called).to be_truthy
         end
       end
     end
@@ -171,7 +171,7 @@ module CFTools::Tunnel
 
             expect(
               subject.authenticate_with_director(director, "foo", saved_credentials)
-            ).to be_true
+            ).to be_truthy
           end
 
           it "saves them to the bosh config" do
@@ -221,7 +221,7 @@ module CFTools::Tunnel
             expect(
               subject.authenticate_with_director(
                 director, "foo", "username" => "user", "password" => "pass")
-            ).to be_true
+            ).to be_truthy
           end
         end
 

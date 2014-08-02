@@ -42,7 +42,7 @@ module CFTools
     end
 
     def render_table
-      rows = 
+      rows =
         advertisements.sort.collect do |id, (attrs, prev)|
           idx, _ = id.split("-", 2)
 

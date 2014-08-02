@@ -25,4 +25,8 @@ RSpec.configure do |c|
   c.include CliHelper
   c.include InteractHelper
   c.include BlueShell::Matchers
+
+  c.mock_with :rspec do |mocks|
+    mocks.yield_receiver_to_any_instance_implementation_blocks = false
+  end
 end
